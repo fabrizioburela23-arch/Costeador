@@ -112,7 +112,7 @@ tabs = st.tabs(["📝 Nueva Cotización", "🗂️ Historial Guardado"])
 
 # --- PESTAÑA 1: NUEVA COTIZACIÓN ---
 with tabs[0]:
-from datetime import datetime
+    from datetime import datetime
 
 ARCHIVO_BD = "cotizaciones_fika.json"
 

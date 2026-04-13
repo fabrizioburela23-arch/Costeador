@@ -195,8 +195,8 @@ def render_nueva_cotizacion():
             nombre_coti = st.text_input("Nombre del Producto / Escenario (ej: Ya!Jua 50g Supermercados)")
         with col_btn:
             st.write("") # Espaciador
-            if st.button("Guardar", type="primary", use_container_width=True):
-            if nombre_coti:
+            if st.button("Guardar", type="primary", use_container_width=True):                                                                                                                    
+                if nombre_coti:
                 # 1. Armamos el paquete de datos
                 nueva_coti = {
                     "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),

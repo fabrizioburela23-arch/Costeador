@@ -197,7 +197,7 @@ def render_nueva_cotizacion():
             st.write("") # Espaciador
             if st.button("Guardar", type="primary", use_container_width=True):
                 if nombre_coti:
-                    if nombre_coti:
+              if nombre_coti:
             nueva_coti = {
                 "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "parametros": {
@@ -211,6 +211,7 @@ def render_nueva_cotizacion():
                     "precio_final": precio_final_cliente
                 }
             }
+            st.session_state.db_cotizaciones[nombre_coti] = nueva_coti
             st.session_state.db_cotizaciones[nombre_coti] = nueva_coti
                     def perform_save(db):
                         db[nombre_coti] = nueva_coti

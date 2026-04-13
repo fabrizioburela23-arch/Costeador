@@ -1,2 +1,8 @@
+streamlit>=1.28.0
+pandas>=2.0.0
+plotly>=5.17.0
+firebase-admin>=6.2.0
 streamlit
 pandas
+fpdf2
+plotly

@@ -196,28 +196,28 @@ def render_nueva_cotizacion():
         with col_btn:
             st.write("") # Espaciador
             if st.button("Guardar", type="primary", use_container_width=True):
-            if nombre_coti:
-                nueva_coti = {
-                    "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    "parametros": {
-                        "mp": mp, "empaque": empaque, "mo": mo, "otros": otros_costos,
-                        "margen_fika": margen_fika, "margen_dist": margen_distribuidor,
-                        "margen_pdv": margen_pdv, "impuestos": impuestos
-                    },
-                    "resultados": {
-                        "costo_total": costo_total, 
-                        "precio_fika": precio_fika,
-                        "precio_final": precio_final_cliente
+                if nombre_coti:
+                    nueva_coti = {
+                        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "parametros": {
+                            "mp": mp, "empaque": empaque, "mo": mo, "otros": otros_costos,
+                            "margen_fika": margen_fika, "margen_dist": margen_distribuidor,
+                            "margen_pdv": margen_pdv, "impuestos": impuestos
+                        },
+                        "resultados": {
+                            "costo_total": costo_total, 
+                            "precio_fika": precio_fika,
+                            "precio_final": precio_final_cliente
+                        }
                     }
-                }
-                
-                def perform_save(db):
-                    db[nombre_coti] = nueva_coti
-                    return db
-                
-                st.session_state.db_cotizaciones = update_bd(perform_save)
-                guardar_bd(st.session_state.db_cotizaciones)
-                st.success("¡Cotización guardada con éxito!")
+                    
+                    def perform_save(db):
+                        db[nombre_coti] = nueva_coti
+                        return db
+                    
+                    st.session_state.db_cotizaciones = update_bd(perform_save)
+                    guardar_bd(st.session_state.db_cotizaciones)
+                    st.success("¡Cotización guardada con éxito!")
             else:
                 st.warning("Por favor, ingresa un nombre para la cotización.")
 

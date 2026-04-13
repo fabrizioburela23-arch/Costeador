@@ -2,6 +2,116 @@ import streamlit as st
 import pandas as pd
 import json
 import os
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+from datetime import datetime
+
+# --- CONFIGURACIÓN DE LA PÁGINA ---
+st.set_page_config(page_title="Cotizador Comercial FikaGroup", layout="wide")
+ARCHIVO_BD = "cotizaciones_fika.json"
+
+# --- FUNCIONES DE BASE DE DATOS ---
+def _lock_file(f):
+    if fcntl:
+        fcntl.flock(f, fcntl.LOCK_EX)
+    else:
+        try:
+            import msvcrt
+            # Lock the first byte of the file to ensure mutual exclusion
+            # We seek to 0 before locking to ensure all processes lock the same byte
+            current_pos = f.tell()
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
+            f.seek(current_pos)
+        except (ImportError, AttributeError, OSError):
+            pass
+
+def _unlock_file(f):
+    if fcntl:
+        fcntl.flock(f, fcntl.LOCK_UN)
+    else:
+        try:
+            import msvcrt
+            current_pos = f.tell()
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+            f.seek(current_pos)
+        except (ImportError, AttributeError, OSError):
+            pass
+
+def cargar_bd():
+    if not os.path.exists(ARCHIVO_BD):
+        return {}
+    # Use "a+" to ensure compatibility with msvcrt.locking on Windows,
+    # as it requires write access even for shared-like locks.
+    with open(ARCHIVO_BD, "a+") as f:
+        try:
+            # Always lock before seeking/reading to ensure consistency
+            _lock_file(f)
+            f.seek(0)
+            return json.load(f)
+        except (json.JSONDecodeError, EOFError):
+            return {}
+        finally:
+            _unlock_file(f)
+
+def guardar_bd(datos):
+    """Note: Prefer using update_bd to avoid lost updates."""
+    # Using 'a+' ensures the file is created if it doesn't exist and doesn't truncate on open
+    with open(ARCHIVO_BD, "a+") as f:
+        try:
+            _lock_file(f)
+            f.seek(0)
+            f.truncate()
+            json.dump(datos, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        finally:
+            _unlock_file(f)
+
+def update_bd(update_func):
+    """
+    Safely update the database using a Read-Modify-Write cycle.
+    update_func: a function that takes the current dict and returns the updated dict.
+    """
+    with open(ARCHIVO_BD, "a+") as f:
+        try:
+            _lock_file(f)
+            f.seek(0)
+            try:
+                content = f.read()
+                if content:
+                    datos = json.loads(content)
+                else:
+                    datos = {}
+            except (json.JSONDecodeError, EOFError):
+                datos = {}
+
+            nuevos_datos = update_func(datos)
+
+            f.seek(0)
+            f.truncate()
+            json.dump(nuevos_datos, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+            return nuevos_datos
+        finally:
+            _unlock_file(f)
+
+# Initialize session state with the current data
+if 'db_cotizaciones' not in st.session_state:
+    st.session_state.db_cotizaciones = cargar_bd()
+
+# --- ENCABEZADO ---
+st.title("📊 Cotizador Comercial FikaGroup")
+st.markdown("Calculadora estratégica B2B/B2C basada en **margen sobre precio**.")
+
+tabs = st.tabs(["📝 Nueva Cotización", "🗂️ Historial Guardado"])
+
+# --- PESTAÑA 1: NUEVA COTIZACIÓN ---
+with tabs[0]:
 from datetime import datetime
 
 ARCHIVO_BD = "cotizaciones_fika.json"
@@ -87,6 +197,7 @@ def render_nueva_cotizacion():
             st.write("") # Espaciador
             if st.button("Guardar", type="primary", use_container_width=True):
                 if nombre_coti:
+                    nueva_coti = {
                     st.session_state.db_cotizaciones[nombre_coti] = {
                         "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
                         "parametros": {
@@ -99,11 +210,19 @@ def render_nueva_cotizacion():
                             "precio_final": precio_final_cliente
                         }
                     }
+
+                    def perform_save(db):
+                        db[nombre_coti] = nueva_coti
+                        return db
+
+                    st.session_state.db_cotizaciones = update_bd(perform_save)
                     guardar_bd(st.session_state.db_cotizaciones)
                     st.success("¡Cotización guardada con éxito!")
                 else:
                     st.error("Ponle un nombre para guardarla.")
 
+# --- PESTAÑA 2: HISTORIAL ---
+with tabs[1]:
 def render_historial():
     st.header("🗂️ Historial de Cotizaciones Guardadas")
 
@@ -358,6 +477,13 @@ with tabs[1]:
                 st.table(df_params)
 
             if st.button("Eliminar esta cotización", type="secondary"):
+                def perform_delete(db):
+                    if coti_seleccionada in db:
+                        del db[coti_seleccionada]
+                    return db
+
+                st.session_state.db_cotizaciones = update_bd(perform_delete)
+                st.rerun()
                 del st.session_state.db_cotizaciones[coti_seleccionada]
                 guardar_bd(st.session_state.db_cotizaciones)
                 st.rerun()

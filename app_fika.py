@@ -195,10 +195,9 @@ def render_nueva_cotizacion():
             nombre_coti = st.text_input("Nombre del Producto / Escenario (ej: Ya!Jua 50g Supermercados)")
         with col_btn:
             st.write("") # Espaciador
-            if st.button("Guardar", type="primary", use_container_width=True):                                                                                                                    
-                if nombre_coti:
-                # 1. Armamos el paquete de datos
-                    nueva_coti = {
+            if st.button("Guardar", type="primary", use_container_width=True):
+            if nombre_coti:
+                nueva_coti = {
                     "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
                     "parametros": {
                         "mp": mp, "empaque": empaque, "mo": mo, "otros": otros_costos,
@@ -212,7 +211,6 @@ def render_nueva_cotizacion():
                     }
                 }
                 
-                # 2. Guardamos en la base de datos de la sesión
                 def perform_save(db):
                     db[nombre_coti] = nueva_coti
                     return db
@@ -220,8 +218,8 @@ def render_nueva_cotizacion():
                 st.session_state.db_cotizaciones = update_bd(perform_save)
                 guardar_bd(st.session_state.db_cotizaciones)
                 st.success("¡Cotización guardada con éxito!")
-                else:
-                    st.error("Ponle un nombre para guardarla.")
+            else:
+                st.warning("Por favor, ingresa un nombre para la cotización.")
 
 # --- PESTAÑA 2: HISTORIAL ---
 with tabs[1]:

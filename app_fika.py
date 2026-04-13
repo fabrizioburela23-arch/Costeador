@@ -511,14 +511,4 @@ with tabs[1]:
     
     if __name__ == '__main__':
         main()
-                    st.metric("Costo Total", f"{datos['resultados']['costo_total']:.2f} Bs.")
-                    st.metric("Precio Salida Fika", f"{datos['resultados']['precio_fika']:.2f} Bs.")
-                    st.metric("Precio Final Cliente", f"{datos['resultados']['precio_final']:.2f} Bs.")
-    
-                if st.button("Eliminar esta cotización", type="secondary"):
-                    def delete_coti(data):
-                        if coti_seleccionada in data:
-                            del data[coti_seleccionada]
-                        return data
-                    update_bd(delete_coti)
-                    st.rerun()
+       

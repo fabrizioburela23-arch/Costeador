@@ -198,7 +198,7 @@ def render_nueva_cotizacion():
             if st.button("Guardar", type="primary", use_container_width=True):                                                                                                                    
                 if nombre_coti:
                 # 1. Armamos el paquete de datos
-                nueva_coti = {
+                    nueva_coti = {
                     "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
                     "parametros": {
                         "mp": mp, "empaque": empaque, "mo": mo, "otros": otros_costos,

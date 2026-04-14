@@ -76,7 +76,6 @@ div.stButton > button[kind="primary"]:hover {
 
 ARCHIVO_BD = "cotizaciones_fika.json"
 
-# --- FUNCIONES DE BASE DE DATOS (MECANISMO DE SEGURIDAD INTACTO) ---
 def _lock_file(f):
     if fcntl: fcntl.flock(f.fileno(), fcntl.LOCK_EX)
     elif msvcrt:
@@ -125,13 +124,16 @@ def update_bd(updater_func):
         finally:
             _unlock_file(f)
 
-# --- INICIALIZACIÓN DE VARIABLES DE SESIÓN (ESTADO GLOBAL) ---
+# --- NORMALIZADOR DE ESTADO SEGURO ---
 if 'db_cotizaciones' not in st.session_state:
     st.session_state.db_cotizaciones = cargar_bd()
 
-# Añadidos nuevos campos U_M y LOTE por solicitud:
 if 'materia_prima' not in st.session_state:
     st.session_state.materia_prima = [{"id": 0, "nombre": "", "u_m": "kg", "lote": "", "cantidad": 0.0, "rendimiento": 100.0, "costo": 0.0}]
+else:
+    for item in st.session_state.materia_prima:
+        if 'u_m' not in item: item['u_m'] = 'kg'
+        if 'lote' not in item: item['lote'] = ''
 
 if 'empaque' not in st.session_state:
     st.session_state.empaque = [
@@ -140,17 +142,16 @@ if 'empaque' not in st.session_state:
         {"id": 2, "nombre": "Cajas", "cantidad": 0.0, "costo": 0.0}
     ]
 
-# Añadida nueva métrica Transporte Logístico:
 if 'costos_operativos' not in st.session_state:
     st.session_state.costos_operativos = {"mano_obra": 0.0, "prorrateo": 0.0, "transporte": 0.0}
+else:
+    if 'transporte' not in st.session_state.costos_operativos:
+        st.session_state.costos_operativos['transporte'] = 0.0
 
 def cargar_receta_a_estado(receta_id):
-    """ Función fundamental para recargar recetas antiguas """
     datos = st.session_state.db_cotizaciones.get(receta_id, None)
     if datos:
         params = datos.get('parametros', {})
-        
-        # Migrar MP y asegurar que soporte variables viejas que no tenían U_m y lote
         mp_recuperada = []
         for i, item in enumerate(params.get('mp', [])):
             mp_recuperada.append({
@@ -164,23 +165,26 @@ def cargar_receta_a_estado(receta_id):
             })
         st.session_state.materia_prima = mp_recuperada if mp_recuperada else [{"id": 0, "nombre": "", "u_m": "kg", "lote": "", "cantidad": 0.0, "rendimiento": 100.0, "costo": 0.0}]
         
-        # Migrar empaques
         st.session_state.empaque = params.get('empaque', st.session_state.empaque)
         
-        # Migrar Costos Operacionales y Transporte
         ops_antiguos = params.get('op', {})
         st.session_state.costos_operativos = {
             "mano_obra": ops_antiguos.get('mano_obra', 0.0),
             "prorrateo": ops_antiguos.get('prorrateo', 0.0),
-            "transporte": ops_antiguos.get('transporte', 0.0) # Proteccion si la receta antigua no tenia transporte
+            "transporte": ops_antiguos.get('transporte', 0.0) 
         }
         
-        # Setear Slider Values
         st.session_state.t_margen_fika = params.get('margen_fika', 35)
         st.session_state.t_margen_pdv = params.get('margen_pdv', 20)
         st.session_state.t_impuestos = params.get('impuestos', 13)
 
-# --- CALLBACKS DE INTERFAZ ---
+# Rerun retrocompatible
+def refrescar_interfaz():
+    if hasattr(st, "rerun"):
+        st.rerun()
+    else:
+        st.experimental_rerun()
+
 def add_materia_prima():
     st.session_state.materia_prima.append({"id": len(st.session_state.materia_prima), "nombre": "", "u_m": "kg", "lote": "", "cantidad": 0.0, "rendimiento": 100.0, "costo": 0.0})
 
@@ -188,28 +192,27 @@ def add_empaque():
     st.session_state.empaque.append({"id": len(st.session_state.empaque), "nombre": "", "cantidad": 0.0, "costo": 0.0})
 
 def del_materia_prima(index):
-    st.session_state.materia_prima.pop(index)
+    if len(st.session_state.materia_prima) > 1:
+        st.session_state.materia_prima.pop(index)
 
 def del_empaque(index):
-    st.session_state.empaque.pop(index)
+    if len(st.session_state.empaque) > 1:
+        st.session_state.empaque.pop(index)
 
 def main():
-    # --- PANTALLA PRINCIPAL ENCABEZADO ---
     st.markdown("<div class='fika-logo'>FIKA <span style='font-weight:300;'>COSTEADOR</span></div>", unsafe_allow_html=True)
     st.markdown("<p class='fika-sub'>Inteligencia de Producción B2B 🚀</p>", unsafe_allow_html=True)
 
-    # --- SIDEBAR: ESTILO SAAS ---
     with st.sidebar:
         st.markdown("### ⚙️ Panel Comercial")
         
-        # Logica de carga de recetas en caliente:
         opciones_bd = ['-- Crear Nueva Receta --'] + list(st.session_state.db_cotizaciones.keys())
         receta_seleccionada = st.selectbox("📂 Cargar Receta Base / Histórica", opciones_bd)
         
-        if st.button("⬇️ Restaurar Datos de Receta", use_container_width=True):
+        if st.button("⬇️ Restaurar Receta", use_container_width=True):
             if receta_seleccionada != '-- Crear Nueva Receta --':
                 cargar_receta_a_estado(receta_seleccionada)
-                st.rerun()
+                refrescar_interfaz()
 
         st.divider()
         
@@ -227,32 +230,25 @@ def main():
             st.markdown("<p style='font-size:0.9rem;font-weight:bold;'><span style='color: #00B0FF;'>●</span> Costos Estructurales / Lote</p>", unsafe_allow_html=True)
             st.session_state.costos_operativos['mano_obra'] = st.number_input("👷 Mano de Obra (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['mano_obra']), step=1.0)
             st.session_state.costos_operativos['prorrateo'] = st.number_input("🏭 Prorrateo Fábrica (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['prorrateo']), step=1.0)
-            # NUEVO CAMPO: TRANSPORTE
             st.session_state.costos_operativos['transporte'] = st.number_input("🚚 Mensajería/Transporte (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['transporte']), step=1.0)
 
-    # --- PESTAÑAS PRINCIPALES ---
     tab_cotizador, tab_historial = st.tabs(["📝 Formular y Costear", "🗂️ Historial Fika"])
 
     with tab_cotizador:
         col_datos, padding, col_resultados = st.columns([1.7, 0.05, 1.3])
 
         with col_datos:
-            # 1. MATERIA PRIMA AVANZADA
             with st.container(border=True):
                 st.markdown("<h3 style='margin-bottom:0;'>🌾 1. Materia Prima</h3>", unsafe_allow_html=True)
-                st.caption("Detalla ingredientes considerando unidades y trazabilidad (Lotes).")
                 st.write("") 
                 
                 for i, item in enumerate(st.session_state.materia_prima):
-                    # Rediseño de 7 columnas para alojar U.M y Lote
                     c1, c_um, c_lt, c2, c3, c4, c5 = st.columns([2.5, 0.8, 1.4, 1.0, 1.0, 1.3, 0.4])
-                    
                     visibility = "visible" if i == 0 else "collapsed"
                     
                     item['nombre'] = c1.text_input("Ingrediente", item['nombre'], key=f"mp_n_{i}", label_visibility=visibility)
                     item['u_m'] = c_um.text_input("U.M", item.get('u_m', 'kg'), key=f"mp_um_{i}", label_visibility=visibility, help="Unidad de Medida (kg, L, uds)")
                     item['lote'] = c_lt.text_input("Lote Cmp", item.get('lote', ''), key=f"mp_lt_{i}", label_visibility=visibility, placeholder="OPC.")
-                    
                     item['cantidad'] = c2.number_input("Cant.", min_value=0.0, value=float(item['cantidad']), key=f"mp_c_{i}", step=0.1, label_visibility=visibility)
                     item['rendimiento'] = c3.number_input("Rend%", min_value=0.1, value=float(item['rendimiento']), key=f"mp_r_{i}", step=1.0, label_visibility=visibility)
                     item['costo'] = c4.number_input("Bs Costo", min_value=0.0, value=float(item['costo']), key=f"mp_co_{i}", step=1.0, label_visibility=visibility)
@@ -261,16 +257,14 @@ def main():
                         c5.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
                     if c5.button("✕", key=f"del_m_{i}", use_container_width=True):
                         del_materia_prima(i)
-                        st.rerun()
+                        refrescar_interfaz()
 
                 if st.button("➕ Adicionar Ingrediente"):
                      add_materia_prima()
-                     st.rerun()
+                     refrescar_interfaz()
 
-            # 2. EMPAQUES
             with st.container(border=True):
                 st.markdown("<h3 style='margin-bottom:0;'>📦 2. Material de Empaque</h3>", unsafe_allow_html=True)
-                st.caption("Bottellas, pegatinas, flowpacks.")
                 st.write("")
                 
                 for i, item in enumerate(st.session_state.empaque):
@@ -285,27 +279,23 @@ def main():
                         c5.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
                     if c5.button("✕", key=f"del_e_{i}", use_container_width=True):
                         del_empaque(i)
-                        st.rerun()
+                        refrescar_interfaz()
 
                 if st.button("➕ Adicionar Empaque"):
                     add_empaque()
-                    st.rerun()
+                    refrescar_interfaz()
 
             if st.button("🚀 Calcular Inteligencia Financiera", type="primary", use_container_width=True):
                 st.session_state.mostrar_resultados = True
 
         with col_resultados:
-            # DASHBOARD FINANCIERO PROFESIONAL
             with st.container(border=True):
                 st.markdown("### 📊 Tablero de Rentabilidad")
 
-                # FORMULA MAESTRA CON LOGISTICA INCLUIDA
                 costo_mp = sum([(item['cantidad'] * item['costo']) / (item['rendimiento']/100) if item['rendimiento'] > 0 else 0 for item in st.session_state.materia_prima])
                 costo_empaque = sum([item['cantidad'] * item['costo'] for item in st.session_state.empaque])
-                
                 c_op = st.session_state.costos_operativos
-                # OJO: Se añade transporte al costo total de la receta
-                costo_op_total = c_op['mano_obra'] + c_op['prorrateo'] + c_op['transporte']
+                costo_op_total = c_op['mano_obra'] + c_op['prorrateo'] + c_op.get('transporte', 0.0)
 
                 costo_total = costo_mp + costo_empaque + costo_op_total
 
@@ -318,17 +308,13 @@ def main():
                 precio_final = precio_pdv / (1 - mimp) if mimp < 1.0 else 0
 
                 st.session_state.resultados = {
-                    "costo_total": costo_total,
-                    "precio_fika": precio_fika,
-                    "precio_pdv": precio_pdv,
-                    "precio_final": precio_final,
-                    "utilidad_fika": precio_fika - costo_total,
-                    "utilidad_pdv": precio_pdv - precio_fika,
-                    "monto_impuestos": precio_final - precio_pdv
+                    "costo_total": costo_total, "precio_fika": precio_fika, "precio_pdv": precio_pdv,
+                    "precio_final": precio_final, "utilidad_fika": precio_fika - costo_total,
+                    "utilidad_pdv": precio_pdv - precio_fika, "monto_impuestos": precio_final - precio_pdv
                 }
 
                 if mf >= 1.0 or mpdv >= 1.0 or mimp >= 1.0:
-                    st.error("⚠️ Alerta: Los márgenes no pueden ser 100% o superiores (Economía imposible).")
+                    st.error("⚠️ Alerta: Los márgenes no pueden ser 100% o superiores.")
                 elif st.session_state.get('mostrar_resultados', False):
                     res = st.session_state.resultados
 
@@ -347,12 +333,9 @@ def main():
                     ])
                     st.dataframe(df_resumen, use_container_width=True, hide_index=True)
 
-            # GENERADOR DE PROFORMAS CON LOGO
             with st.container(border=True):
                 st.markdown("#### 📄 Proforma / Guardar")
-                
                 nombre_coti = st.text_input("Nombre de la Receta o Proforma", placeholder="Ej: Salsa Tomate Lote B")
-                
                 logo_file = st.file_uploader("Subir Logo (Opcional - Proforma Cliente)", type=['png', 'jpg', 'jpeg'])
 
                 c_g1, c_g2 = st.columns(2)
@@ -363,39 +346,27 @@ def main():
                                 data[nombre_coti] = {
                                     "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                     "resultados": res,
-                                    "parametros": {
-                                        "mp": st.session_state.materia_prima,
-                                        "empaque": st.session_state.empaque,
-                                        "op": st.session_state.costos_operativos,
-                                        "margen_fika": margen_fika_pct,
-                                        "margen_pdv": margen_pdv_pct,
-                                        "impuestos": impuestos_pct
-                                    }
+                                    "parametros": {"mp": st.session_state.materia_prima, "empaque": st.session_state.empaque, "op": st.session_state.costos_operativos, "margen_fika": margen_fika_pct, "margen_pdv": margen_pdv_pct, "impuestos": impuestos_pct}
                                 }
                                 return data
                             st.session_state.db_cotizaciones = update_bd(save_coti)
                             st.success("✅ Guardado.")
-                        else:
-                            st.error("⚠️ Falta Nombre.")
+                        else: st.error("⚠️ Falta Nombre.")
                 
                 with c_g2:
                     if nombre_coti and st.session_state.get('mostrar_resultados', False):
-                        # --- GENERACION PDF PROFORMA ---
                         pdf = FPDF()
                         pdf.add_page()
                         
-                        # Manejo Robusto del Logo Subido
                         if logo_file is not None:
                             try:
                                 with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
                                     tmp.write(logo_file.getvalue())
                                     tmp_path = tmp.name
-                                # Inyectar en PDF, esquina superior (x=10, y=10, width=40)
                                 pdf.image(tmp_path, x=10, y=10, w=40)
-                                pdf.ln(15) # Añadir saltos de linea extra si hay imagen
-                                os.remove(tmp_path) # Limpieza obligatoria
-                            except Exception as e:
-                                pass # Ignorar si la imagen falla pero generar el pdf igual
+                                pdf.ln(15)
+                                os.remove(tmp_path)
+                            except Exception: pass
                             
                         pdf.set_font("Helvetica", size=18, style="B")
                         pdf.cell(0, 10, "PROFORMA COMERCIAL", new_x="LMARGIN", new_y="NEXT", align="C")
@@ -429,5 +400,7 @@ def main():
                         pdf.cell(0, 10, "_____________________________________", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.cell(0, 5, "Firma Autorizada", new_x="LMARGIN", new_y="NEXT", align="C")
 
-          
-    main()
+                        pdf_bytes = pdf.output()
+                        st.download_button(label="📄 Descargar PDF/Proforma", data=pdf_bytes, file_name=f"Proforma_{nombre_coti.replace(' ', '_')}.pdf", mime="application/pdf", use_container_width=True)
+                    else: st.button("📄 Descargar PDF/Proforma", disabled=True, use_container_width=True)
+

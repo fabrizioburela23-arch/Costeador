@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import os
 import tempfile
+import traceback
 from datetime import datetime
 from fpdf import FPDF
 
@@ -101,7 +102,7 @@ def cargar_bd():
     try:
         with open(ARCHIVO_BD, "r", encoding="utf-8") as f:
             return json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError): return {}
+    except Exception: return {}
 
 def update_bd(updater_func):
     if not os.path.exists(ARCHIVO_BD):
@@ -113,7 +114,7 @@ def update_bd(updater_func):
             try:
                 content = f.read()
                 data = json.loads(content) if content else {}
-            except json.JSONDecodeError: data = {}
+            except Exception: data = {}
             updated_data = updater_func(data)
             f.seek(0)
             f.truncate()
@@ -178,7 +179,6 @@ def cargar_receta_a_estado(receta_id):
         st.session_state.t_margen_pdv = params.get('margen_pdv', 20)
         st.session_state.t_impuestos = params.get('impuestos', 13)
 
-# Rerun retrocompatible
 def refrescar_interfaz():
     if hasattr(st, "rerun"):
         st.rerun()
@@ -207,7 +207,7 @@ def main():
         st.markdown("### ⚙️ Panel Comercial")
         
         opciones_bd = ['-- Crear Nueva Receta --'] + list(st.session_state.db_cotizaciones.keys())
-        receta_seleccionada = st.selectbox("📂 Cargar Receta Base / Histórica", opciones_bd)
+        receta_seleccionada = st.selectbox("📂 Cargar Receta", opciones_bd)
         
         if st.button("⬇️ Restaurar Receta", use_container_width=True):
             if receta_seleccionada != '-- Crear Nueva Receta --':
@@ -222,15 +222,22 @@ def main():
             v_pdv = st.session_state.get('t_margen_pdv', 20)
             v_imp = st.session_state.get('t_impuestos', 13)
             
-            margen_fika_pct = st.slider("Margen Neto Fika (%)", 0, 99, v_fika, key="slider_fika")
-            margen_pdv_pct = st.slider("Margen Punto Venta (%)", 0, 99, v_pdv, key="slider_pdv")
-            impuestos_pct = st.slider("Impuestos IVA/IT (%)", 0, 99, v_imp, key="slider_imp")
+            margen_fika_pct = st.slider("Margen Neto Fika (%)", 0, 99, int(v_fika), key="slider_fika")
+            margen_pdv_pct = st.slider("Margen Punto Venta (%)", 0, 99, int(v_pdv), key="slider_pdv")
+            impuestos_pct = st.slider("Impuestos IVA/IT (%)", 0, 99, int(v_imp), key="slider_imp")
         
         with st.container(border=True):
             st.markdown("<p style='font-size:0.9rem;font-weight:bold;'><span style='color: #00B0FF;'>●</span> Costos Estructurales / Lote</p>", unsafe_allow_html=True)
-            st.session_state.costos_operativos['mano_obra'] = st.number_input("👷 Mano de Obra (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['mano_obra']), step=1.0)
-            st.session_state.costos_operativos['prorrateo'] = st.number_input("🏭 Prorrateo Fábrica (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['prorrateo']), step=1.0)
-            st.session_state.costos_operativos['transporte'] = st.number_input("🚚 Mensajería/Transporte (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['transporte']), step=1.0)
+            try:
+                mo = float(st.session_state.costos_operativos.get('mano_obra', 0.0))
+                pr = float(st.session_state.costos_operativos.get('prorrateo', 0.0))
+                tr = float(st.session_state.costos_operativos.get('transporte', 0.0))
+            except:
+                mo, pr, tr = 0.0, 0.0, 0.0
+                
+            st.session_state.costos_operativos['mano_obra'] = st.number_input("👷 Mano de Obra (Bs)", min_value=0.0, value=mo, step=1.0)
+            st.session_state.costos_operativos['prorrateo'] = st.number_input("🏭 Prorrateo Fábrica (Bs)", min_value=0.0, value=pr, step=1.0)
+            st.session_state.costos_operativos['transporte'] = st.number_input("🚚 Transporte (Bs)", min_value=0.0, value=tr, step=1.0)
 
     tab_cotizador, tab_historial = st.tabs(["📝 Formular y Costear", "🗂️ Historial Fika"])
 
@@ -246,12 +253,20 @@ def main():
                     c1, c_um, c_lt, c2, c3, c4, c5 = st.columns([2.5, 0.8, 1.4, 1.0, 1.0, 1.3, 0.4])
                     visibility = "visible" if i == 0 else "collapsed"
                     
-                    item['nombre'] = c1.text_input("Ingrediente", item['nombre'], key=f"mp_n_{i}", label_visibility=visibility)
-                    item['u_m'] = c_um.text_input("U.M", item.get('u_m', 'kg'), key=f"mp_um_{i}", label_visibility=visibility, help="Unidad de Medida (kg, L, uds)")
-                    item['lote'] = c_lt.text_input("Lote Cmp", item.get('lote', ''), key=f"mp_lt_{i}", label_visibility=visibility, placeholder="OPC.")
-                    item['cantidad'] = c2.number_input("Cant.", min_value=0.0, value=float(item['cantidad']), key=f"mp_c_{i}", step=0.1, label_visibility=visibility)
-                    item['rendimiento'] = c3.number_input("Rend%", min_value=0.1, value=float(item['rendimiento']), key=f"mp_r_{i}", step=1.0, label_visibility=visibility)
-                    item['costo'] = c4.number_input("Bs Costo", min_value=0.0, value=float(item['costo']), key=f"mp_co_{i}", step=1.0, label_visibility=visibility)
+                    item['nombre'] = c1.text_input("Ingrediente", str(item.get('nombre', '')), key=f"mp_n_{i}", label_visibility=visibility)
+                    item['u_m'] = c_um.text_input("U.M", str(item.get('u_m', 'kg')), key=f"mp_um_{i}", label_visibility=visibility)
+                    item['lote'] = c_lt.text_input("Lote", str(item.get('lote', '')), key=f"mp_lt_{i}", label_visibility=visibility, placeholder="Opc.")
+                    
+                    try:
+                        cant_val = float(item.get('cantidad', 0.0))
+                        rend_val = float(item.get('rendimiento', 100.0))
+                        cos_val = float(item.get('costo', 0.0))
+                    except:
+                        cant_val, rend_val, cos_val = 0.0, 100.0, 0.0
+                        
+                    item['cantidad'] = c2.number_input("Cant.", min_value=0.0, value=cant_val, key=f"mp_c_{i}", step=0.1, label_visibility=visibility)
+                    item['rendimiento'] = c3.number_input("Rend%", min_value=0.1, value=rend_val, key=f"mp_r_{i}", step=1.0, label_visibility=visibility)
+                    item['costo'] = c4.number_input("Costo", min_value=0.0, value=cos_val, key=f"mp_co_{i}", step=1.0, label_visibility=visibility)
                     
                     if i == 0:
                         c5.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
@@ -271,9 +286,16 @@ def main():
                     c1, c2, c3, c5 = st.columns([4, 1.5, 2, 0.4])
                     visibility = "visible" if i == 0 else "collapsed"
                     
-                    item['nombre'] = c1.text_input("Empaque", item['nombre'], key=f"ep_n_{i}", label_visibility=visibility)
-                    item['cantidad'] = c2.number_input("Unids", min_value=0.0, value=float(item['cantidad']), key=f"ep_c_{i}", step=1.0, label_visibility=visibility)
-                    item['costo'] = c3.number_input("Unitario(Bs)", min_value=0.0, value=float(item['costo']), key=f"ep_co_{i}", step=1.0, label_visibility=visibility)
+                    item['nombre'] = c1.text_input("Empaque", str(item.get('nombre', '')), key=f"ep_n_{i}", label_visibility=visibility)
+                    
+                    try:
+                        cant_e = float(item.get('cantidad', 0.0))
+                        cos_e = float(item.get('costo', 0.0))
+                    except:
+                        cant_e, cos_e = 0.0, 0.0
+                        
+                    item['cantidad'] = c2.number_input("Unids", min_value=0.0, value=cant_e, key=f"ep_c_{i}", step=1.0, label_visibility=visibility)
+                    item['costo'] = c3.number_input("Unitario(Bs)", min_value=0.0, value=cos_e, key=f"ep_co_{i}", step=1.0, label_visibility=visibility)
                     
                     if i == 0:
                         c5.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
@@ -292,20 +314,20 @@ def main():
             with st.container(border=True):
                 st.markdown("### 📊 Tablero de Rentabilidad")
 
-                costo_mp = sum([(item['cantidad'] * item['costo']) / (item['rendimiento']/100) if item['rendimiento'] > 0 else 0 for item in st.session_state.materia_prima])
-                costo_empaque = sum([item['cantidad'] * item['costo'] for item in st.session_state.empaque])
+                costo_mp = sum([(float(item['cantidad']) * float(item['costo'])) / (float(item['rendimiento'])/100.0) if float(item['rendimiento']) > 0 else 0 for item in st.session_state.materia_prima])
+                costo_empaque = sum([float(item['cantidad']) * float(item['costo']) for item in st.session_state.empaque])
                 c_op = st.session_state.costos_operativos
-                costo_op_total = c_op['mano_obra'] + c_op['prorrateo'] + c_op.get('transporte', 0.0)
+                costo_op_total = float(c_op.get('mano_obra', 0.0)) + float(c_op.get('prorrateo', 0.0)) + float(c_op.get('transporte', 0.0))
 
                 costo_total = costo_mp + costo_empaque + costo_op_total
 
-                mf = margen_fika_pct / 100.0
-                mpdv = margen_pdv_pct / 100.0
-                mimp = impuestos_pct / 100.0
+                mf = float(margen_fika_pct) / 100.0
+                mpdv = float(margen_pdv_pct) / 100.0
+                mimp = float(impuestos_pct) / 100.0
 
-                precio_fika = costo_total / (1 - mf) if mf < 1.0 else 0
-                precio_pdv = precio_fika / (1 - mpdv) if mpdv < 1.0 else 0
-                precio_final = precio_pdv / (1 - mimp) if mimp < 1.0 else 0
+                precio_fika = costo_total / (1.0 - mf) if mf < 1.0 else 0
+                precio_pdv = precio_fika / (1.0 - mpdv) if mpdv < 1.0 else 0
+                precio_final = precio_pdv / (1.0 - mimp) if mimp < 1.0 else 0
 
                 st.session_state.resultados = {
                     "costo_total": costo_total, "precio_fika": precio_fika, "precio_pdv": precio_pdv,
@@ -314,33 +336,32 @@ def main():
                 }
 
                 if mf >= 1.0 or mpdv >= 1.0 or mimp >= 1.0:
-                    st.error("⚠️ Alerta: Los márgenes no pueden ser 100% o superiores.")
+                    st.error("⚠️ Alerta: Los márgenes no pueden ser 100%.")
                 elif st.session_state.get('mostrar_resultados', False):
                     res = st.session_state.resultados
 
                     c_met1, c_met2 = st.columns(2)
-                    c_met1.metric("🟣 B2B Fábrica Fika", f"Bs {res['precio_fika']:.2f}", f"Margen: {margen_fika_pct}%")
-                    c_met2.metric("🔵 B2C Cliente Final", f"Bs {res['precio_final']:.2f}", f"Margen PDV: {margen_pdv_pct}%", delta_color="off")
+                    c_met1.metric("🟣 B2B Fábrica", f"Bs {res['precio_fika']:.2f}")
+                    c_met2.metric("🔵 B2C Cliente Final", f"Bs {res['precio_final']:.2f}", delta_color="off")
                     
                     st.divider()
                     
-                    st.markdown("#### 📋 Cascada de Costos Globales")
                     df_resumen = pd.DataFrame([
-                        {"ID": 1, "Variables": "Costo Fijo+Producción+Transp.", "Bs": f"{res['costo_total']:.2f}", "Margen %": f"{(res['costo_total']/res['precio_final'])*100:.1f}%" if res['precio_final']>0 else "0%"},
-                        {"ID": 2, "Variables": "🏆 Ganancia Neta Fika", "Bs": f"{res['utilidad_fika']:.2f}", "Margen %": f"{(res['utilidad_fika']/res['precio_final'])*100:.1f}%"  if res['precio_final']>0 else "0%"},
-                        {"ID": 3, "Variables": "🤝 Ganancia Distribuidor", "Bs": f"{res['utilidad_pdv']:.2f}", "Margen %": f"{(res['utilidad_pdv']/res['precio_final'])*100:.1f}%"  if res['precio_final']>0 else "0%"},
-                        {"ID": 4, "Variables": "⚖️ Carga Tributaria", "Bs": f"{res['monto_impuestos']:.2f}", "Margen %": f"{(res['monto_impuestos']/res['precio_final'])*100:.1f}%"  if res['precio_final']>0 else "0%"}
+                        {"Elemento": "Costos Raíz", "Bs": f"{res['costo_total']:.2f}", "Margen %": f"{(res['costo_total']/res['precio_final'])*100:.1f}%" if res['precio_final']>0 else "0%"},
+                        {"Elemento": "Ganancia Fika", "Bs": f"{res['utilidad_fika']:.2f}", "Margen %": f"{(res['utilidad_fika']/res['precio_final'])*100:.1f}%"  if res['precio_final']>0 else "0%"},
+                        {"Elemento": "Ganancia Distr.", "Bs": f"{res['utilidad_pdv']:.2f}", "Margen %": f"{(res['utilidad_pdv']/res['precio_final'])*100:.1f}%"  if res['precio_final']>0 else "0%"},
+                        {"Elemento": "Impuestos", "Bs": f"{res['monto_impuestos']:.2f}", "Margen %": f"{(res['monto_impuestos']/res['precio_final'])*100:.1f}%"  if res['precio_final']>0 else "0%"}
                     ])
                     st.dataframe(df_resumen, use_container_width=True, hide_index=True)
 
             with st.container(border=True):
                 st.markdown("#### 📄 Proforma / Guardar")
-                nombre_coti = st.text_input("Nombre de la Receta o Proforma", placeholder="Ej: Salsa Tomate Lote B")
-                logo_file = st.file_uploader("Subir Logo (Opcional - Proforma Cliente)", type=['png', 'jpg', 'jpeg'])
+                nombre_coti = st.text_input("ID Proforma", placeholder="Salsa Tomate", label_visibility="collapsed")
+                logo_file = st.file_uploader("Logo (Opcional)", type=['png', 'jpg', 'jpeg'])
 
                 c_g1, c_g2 = st.columns(2)
                 with c_g1:
-                    if st.button("💾 Guardar Receta", use_container_width=True):
+                    if st.button("💾 Guardar BD", use_container_width=True):
                         if nombre_coti:
                             def save_coti(data):
                                 data[nombre_coti] = {
@@ -350,8 +371,8 @@ def main():
                                 }
                                 return data
                             st.session_state.db_cotizaciones = update_bd(save_coti)
-                            st.success("✅ Guardado.")
-                        else: st.error("⚠️ Falta Nombre.")
+                            st.success("✅ Ok")
+                        else: st.error("⚠️ Nombre")
                 
                 with c_g2:
                     if nombre_coti and st.session_state.get('mostrar_resultados', False):
@@ -373,8 +394,7 @@ def main():
                         pdf.ln(5)
                         
                         pdf.set_font("Helvetica", size=12)
-                        pdf.cell(0, 10, f"Cliente / Concepto: {nombre_coti}", new_x="LMARGIN", new_y="NEXT")
-                        pdf.cell(0, 10, f"Fecha Emision: {datetime.now().strftime('%Y-%m-%d')}", new_x="LMARGIN", new_y="NEXT")
+                        pdf.cell(0, 10, f"Cliente: {nombre_coti}", new_x="LMARGIN", new_y="NEXT")
                         
                         pdf.line(10, pdf.get_y()+2, 200, pdf.get_y()+2)
                         pdf.ln(10)
@@ -384,23 +404,36 @@ def main():
                         pdf.cell(40, 10, "Monto", border=0, align="R", new_x="LMARGIN", new_y="NEXT")
                         
                         pdf.set_font("Helvetica", size=11)
-                        pdf.cell(70, 8, "Costo de Produccion (C.F + Logistica):")
+                        pdf.cell(70, 8, "Costo de Produccion:")
                         pdf.cell(40, 8, f"{res['costo_total']:.2f} Bs.", align="R", new_x="LMARGIN", new_y="NEXT")
                         
-                        pdf.cell(70, 8, "Precio Salida de Fabrica:")
+                        pdf.cell(70, 8, "Precio Fabrica:")
                         pdf.cell(40, 8, f"{res['precio_fika']:.2f} Bs.", align="R", new_x="LMARGIN", new_y="NEXT")
                         
-                        pdf.ln(5)
+                        pdf.ln(3)
                         pdf.set_font("Helvetica", size=15, style="B")
-                        pdf.cell(70, 10, "TOTAL PVP CLIENTE FINAL:")
+                        pdf.cell(70, 10, "TOTAL CLIENTE FINAL:")
                         pdf.cell(40, 10, f"{res['precio_final']:.2f} Bs.", align="R", new_x="LMARGIN", new_y="NEXT")
-                        
-                        pdf.ln(25)
-                        pdf.set_font("Helvetica", size=10, style="I")
-                        pdf.cell(0, 10, "_____________________________________", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 5, "Firma Autorizada", new_x="LMARGIN", new_y="NEXT", align="C")
 
                         pdf_bytes = pdf.output()
-                        st.download_button(label="📄 Descargar PDF/Proforma", data=pdf_bytes, file_name=f"Proforma_{nombre_coti.replace(' ', '_')}.pdf", mime="application/pdf", use_container_width=True)
-                    else: st.button("📄 Descargar PDF/Proforma", disabled=True, use_container_width=True)
+                        st.download_button(label="📄 PDF", data=pdf_bytes, file_name=f"{nombre_coti.replace(' ', '_')}.pdf", mime="application/pdf", use_container_width=True)
+                    else: st.button("📄 PDF", disabled=True, use_container_width=True)
 
+    with tab_historial:
+        st.subheader("🗄️ Historial Fika")
+        bd = st.session_state.db_cotizaciones
+        if not bd:
+            st.info("Vacío.")
+        else:
+            with st.container(border=True):
+                coti_seleccionada = st.selectbox("Buscar:", ['-- Vacio --'] + list(bd.keys()))
+                if coti_seleccionada and coti_seleccionada != '-- Vacio --':
+                    datos = bd[coti_seleccionada]
+                    st.caption(f"Registro: {datos['fecha']}")
+                    st.metric("Venta Público", f"{datos['resultados']['precio_final']:.2f} Bs")
+
+try:
+    main()
+except Exception as e:
+    st.error(f"⚠️ ERROR FATAL BLOQUEADO: {str(e)}")
+    st.code(traceback.format_exc())

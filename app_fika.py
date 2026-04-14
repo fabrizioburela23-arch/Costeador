@@ -291,4 +291,4 @@ def main():
 
                     df_params = pd.DataFrame({
                         "Variable": ["Margen Fika", "Margen PDV", "Impuestos"],
-                        "Valor": [margen_fika_v, margen_pdv_v, impuestos_v
+                        "Valor": [margen_fika_v, margen_pdv_v, impuestos_v]

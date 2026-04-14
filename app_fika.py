@@ -15,104 +15,50 @@ try:
 except ImportError:
     msvcrt = None
 
-# --- CONFIGURACIÓN DE LA PÁGINA (DEBE SER LA PRIMERA LÍNEA) ---
-st.set_page_config(page_title="Costeador Profesional Fika", page_icon="⚙️", layout="wide")
+# --- CONFIGURACIÓN DE LA PÁGINA ---
+st.set_page_config(page_title="Costeador B2B | Fika Group", page_icon="📈", layout="wide", initial_sidebar_state="expanded")
 
-# --- INYECCIÓN CSS AVANZADA (PREMIUM SAAS UI) ---
+# --- CSS MINIMALISTA PARA NO ROMPER MODO OSCURO/CLARO ---
 st.markdown("""
 <style>
-/* Main Background */
-.stApp {
-    background-color: #F8FAFC;
-}
+/* Ocultar barra superior por defecto de Streamlit */
+header[data-testid="stHeader"] { display: none; }
 
-/* Hide default top header */
-header[data-testid="stHeader"] {
-    background-color: transparent !important;
-}
-
-/* Styling for Card Containers */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #FFFFFF;
-    border-radius: 16px;
-    border: 1px solid #E2E8F0;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    padding: 1.5rem !important;
-    transition: all 0.3s ease;
-}
-div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-
-/* Typography Enhancements */
-h1, h2, h3 {
-    color: #0F172A;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-}
-
-/* Metrics Styling (Big bold numbers) */
+/* Alinear mejor las métricas (Key Performance Indicators) */
 [data-testid="stMetricValue"] {
-    font-size: 2.8rem !important;
+    font-size: 2.2rem !important;
     font-weight: 800 !important;
-    color: #1E293B !important;
 }
 [data-testid="stMetricLabel"] {
     font-size: 1rem !important;
     font-weight: 600 !important;
-    color: #64748B !important;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-[data-testid="stMetricDelta"] {
-    font-size: 1rem !important;
-    font-weight: 600 !important;
+    opacity: 0.85;
 }
 
-/* Base Buttons */
-div.stButton > button {
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.2s ease-in-out;
-    border: 1px solid #CBD5E1;
-    color: #334155;
-    background: #FFFFFF;
-}
-div.stButton > button:hover {
-    border-color: #94A3B8;
-    background: #F1F5F9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-}
-
-/* Primary Buttons (Calcular, Guardar, Descargar) */
+/* Hacer que los botones primarios (Guardar, Calcular) destaquen más nativamente */
 div.stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
-    color: white;
-    border: none;
-    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
-}
-div.stButton > button[kind="primary"]:hover {
-    background: linear-gradient(135deg, #4338ca 0%, #1d4ed8 100%);
-    transform: translateY(-2px) scale(1.01);
-    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+    font-weight: bold;
+    border-radius: 8px;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
-/* Inputs & text area styling */
+/* Bordes redondeados sutiles en los inputs */
 .stTextInput input, .stNumberInput input {
-    border-radius: 8px;
-    border: 1px solid #CBD5E1;
+    border-radius: 6px;
 }
-.stTextInput input:focus, .stNumberInput input:focus {
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+
+/* Quitar padding innecesario de la parte superior */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
 }
 </style>
 """, unsafe_allow_html=True)
 
 ARCHIVO_BD = "cotizaciones_fika.json"
 
-# --- FUNCIONES DE BASE DE DATOS (SEGURAS Y UNIFICADAS) ---
+# --- FUNCIONES DE BASE DE DATOS (INTACTAS) ---
 def _lock_file(f):
     if fcntl:
         fcntl.flock(f.fileno(), fcntl.LOCK_EX)
@@ -198,67 +144,91 @@ def add_empaque():
     new_id = len(st.session_state.empaque)
     st.session_state.empaque.append({"id": new_id, "nombre": "", "cantidad": 0.0, "costo": 0.0})
 
+def del_materia_prima(index):
+    st.session_state.materia_prima.pop(index)
+
+def del_empaque(index):
+    st.session_state.empaque.pop(index)
+
 def main():
-    st.title("💼 Costeador Profesional Fika")
-    st.markdown("<p style='color: #64748B; font-size: 1.1rem; margin-bottom: 2rem;'>Herramienta técnica de cotización B2B con cálculo dinámico sobre margen de precio.</p>", unsafe_allow_html=True)
+    # --- CONFIGURACIÓN ESTRATÉGICA EN SIDEBAR (ESTILO SAAS) ---
+    with st.sidebar:
+        st.markdown("### ⚙️ Panel Comercial")
+        st.caption("Configura los márgenes globales y costos operativos.")
+        
+        with st.container(border=True):
+            st.markdown("<p style='font-size:0.9rem;font-weight:bold;'>🏢 Márgenes de Rentabilidad</p>", unsafe_allow_html=True)
+            margen_fika_pct = st.slider("Margen Neto Fika (%)", 0, 99, 35, help="Ganancia bruta sobre precio para FIKA")
+            margen_pdv_pct = st.slider("Margen Punto de Venta (%)", 0, 99, 20, help="Ganancia reservada para el Cliente/Distribuidor")
+            impuestos_pct = st.slider("Impuestos IVA/IT (%)", 0, 99, 13, help="Carga tributaria obligatoria")
+        
+        with st.container(border=True):
+            st.markdown("<p style='font-size:0.9rem;font-weight:bold;'>🏭 Costos Fijos por Lote</p>", unsafe_allow_html=True)
+            st.session_state.costos_operativos['mano_obra'] = st.number_input("👷 Mano de Obra (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['mano_obra']), step=1.0)
+            st.session_state.costos_operativos['prorrateo'] = st.number_input("🏭 Prorrateo Fábrica (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['prorrateo']), step=1.0)
 
-    tabs = st.tabs(["📝 Generar Cotización", "🗂️ Historial Fika"])
+    # --- PANTALLA PRINCIPAL ---
+    st.title("📊 Simulador de Costeo Fika")
+    st.markdown("Sistema inteligente de proyecciones **B2B** basado en cálculo financiero de _Margen sobre Precio_.")
+    st.divider()
 
-    # --- PESTAÑA 1: NUEVO COSTEO ---
-    with tabs[0]:
-        col1, padding, col2 = st.columns([1.5, 0.1, 1.8])
+    tab_cotizador, tab_historial = st.tabs(["📝 Generar Receta y Cotización", "🗂️ Base de Datos Histórica"])
 
-        with col1:
-            # TARJETA: MATERIA PRIMA
+    # --- PESTAÑA 1: COTIZADOR PRINCIPAL ---
+    with tab_cotizador:
+        col_datos, padding, col_resultados = st.columns([1.5, 0.1, 1.2])
+
+        with col_datos:
+            # 1. MATERIA PRIMA
             with st.container(border=True):
-                st.subheader("🌾 1. Materia Prima")
-                st.caption("Detalla todos los ingredientes y su porcentaje de rendimiento.")
+                st.subheader("🌾 1. Materia Prima e Insumos")
+                st.caption("Añade cada ingrediente, cuánta cantidad requiere y su costo exacto.")
+                
+                # Column titles to save space and make it look clean
+                st.markdown("**Descripción | Cant. | Rend % | Costo (Bs) | 🗑️**")
                 
                 for i, item in enumerate(st.session_state.materia_prima):
-                    c1, c2, c3, c4 = st.columns([2, 1, 1, 1.2])
-                    item['nombre'] = c1.text_input("Ingrediente", item['nombre'], key=f"mp_nom_{i}")
-                    item['cantidad'] = c2.number_input("Cant.", min_value=0.0, value=float(item['cantidad']), key=f"mp_cant_{i}", step=1.0)
-                    item['rendimiento'] = c3.number_input("Rend %", min_value=0.1, value=float(item['rendimiento']), key=f"mp_rend_{i}", step=1.0)
-                    item['costo'] = c4.number_input("Costo (Bs)", min_value=0.0, value=float(item['costo']), key=f"mp_costo_{i}", step=1.0)
+                    c1, c2, c3, c4, c5 = st.columns([3, 1.5, 1.5, 1.5, 0.5])
+                    item['nombre'] = c1.text_input("Ingrediente", item['nombre'], key=f"mp_nom_{i}", label_visibility="collapsed", placeholder="Ej. Azúcar")
+                    item['cantidad'] = c2.number_input("Cant.", min_value=0.0, value=float(item['cantidad']), key=f"mp_cant_{i}", step=1.0, label_visibility="collapsed")
+                    item['rendimiento'] = c3.number_input("Rend %", min_value=0.1, value=float(item['rendimiento']), key=f"mp_rend_{i}", step=1.0, label_visibility="collapsed")
+                    item['costo'] = c4.number_input("Costo", min_value=0.0, value=float(item['costo']), key=f"mp_costo_{i}", step=1.0, label_visibility="collapsed")
+                    
+                    # Funcionalidad EXTRA de UX: Eliminar fila dinámica
+                    if c5.button("✕", key=f"del_mp_{i}"):
+                        del_materia_prima(i)
+                        st.rerun()
 
-                st.button("➕ Añadir Ingrediente", on_click=add_materia_prima)
+                st.button("➕ Añadir Nuevo Ingrediente", on_click=add_materia_prima)
 
-            # TARJETA: EMPAQUE
+            # 2. EMPAQUES
             with st.container(border=True):
-                st.subheader("📦 2. Costos de Empaque")
-                st.caption("Envases, etiquetas, cajas logísticas, flejes, etc.")
+                st.subheader("📦 2. Empaquetado y Materiales")
+                st.caption("Sobres, cajas corporativas, botellas, pegatinas, etc.")
+                
+                st.markdown("**Tipo de Empaque | Cant. | Costo Unit. (Bs) | 🗑️**")
                 
                 for i, item in enumerate(st.session_state.empaque):
-                    c1, c2, c3 = st.columns([2, 1, 1.2])
-                    item['nombre'] = c1.text_input("Tipo de Empaque", item['nombre'], key=f"emp_nom_{i}")
-                    item['cantidad'] = c2.number_input("Cant.", min_value=0.0, value=float(item['cantidad']), key=f"emp_cant_{i}", step=1.0)
-                    item['costo'] = c3.number_input("Costo Unit. (Bs)", min_value=0.0, value=float(item['costo']), key=f"emp_costo_{i}", step=1.0)
+                    c1, c2, c3, c5 = st.columns([3.5, 1.5, 2, 0.5])
+                    item['nombre'] = c1.text_input("Tipo", item['nombre'], key=f"emp_nom_{i}", label_visibility="collapsed", placeholder="Ej. Envase Vidrio")
+                    item['cantidad'] = c2.number_input("Cant.", min_value=0.0, value=float(item['cantidad']), key=f"emp_cant_{i}", step=1.0, label_visibility="collapsed")
+                    item['costo'] = c3.number_input("Costo Unit.", min_value=0.0, value=float(item['costo']), key=f"emp_costo_{i}", step=1.0, label_visibility="collapsed")
+                    
+                    if c5.button("✕", key=f"del_emp_{i}"):
+                        del_empaque(i)
+                        st.rerun()
 
-                st.button("➕ Añadir Empaque", on_click=add_empaque)
-
-            # TARJETA: COSTOS FIJOS
-            with st.container(border=True):
-                st.subheader("⚙️ 3. Operativos y Fijos")
-                c1, c2 = st.columns(2)
-                st.session_state.costos_operativos['mano_obra'] = c1.number_input("👷 Mano de Obra (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['mano_obra']), step=1.0)
-                st.session_state.costos_operativos['prorrateo'] = c2.number_input("🏭 Prorrateo Fábrica (Bs)", min_value=0.0, value=float(st.session_state.costos_operativos['prorrateo']), step=1.0)
-
-            # TARJETA: MÁRGENES
-            with st.container(border=True):
-                st.subheader("📈 4. Márgenes de Negocio")
-                margen_fika_pct = st.slider("🎯 Margen Bruto Fika (%)", 0, 99, 35)
-                margen_pdv_pct = st.slider("🏪 Margen Punto de Venta (%)", 0, 99, 20)
-                impuestos_pct = st.slider("⚖️ Retenciones e Impuestos (%)", 0, 99, 13)
+                st.button("➕ Añadir Material", on_click=add_empaque)
 
             if st.button("🚀 Calcular Panel Financiero", type="primary", use_container_width=True):
                 st.session_state.mostrar_resultados = True
 
-        with col2:
-            # TARJETA DE RESULTADOS PRINCIPAL
+        with col_resultados:
+            # PINTAR RESULTADOS
             with st.container(border=True):
-                st.subheader("📊 Análisis de Rentabilidad")
+                st.subheader("💎 Panel de Rentabilidad")
 
-                # --- CÁLCULO REACTIVO (ESTRICTO: MARGEN SOBRE PRECIO) ---
+                # CÁLCULOS MATEMÁTICOS (INQUEBRANTABLES)
                 costo_mp = sum([(item['cantidad'] * item['costo']) / (item['rendimiento']/100) if item['rendimiento'] > 0 else 0 for item in st.session_state.materia_prima])
                 costo_empaque = sum([item['cantidad'] * item['costo'] for item in st.session_state.empaque])
                 costo_op = st.session_state.costos_operativos['mano_obra'] + st.session_state.costos_operativos['prorrateo']
@@ -283,136 +253,128 @@ def main():
                     "monto_impuestos": precio_final - precio_pdv
                 }
 
-                # --- MOSTRAR RESULTADOS ---
                 if mf >= 1.0 or mpdv >= 1.0 or mimp >= 1.0:
-                    st.error("❌ Alerta financiera: Los márgenes o impuestos no pueden sumar o ser del 100%.")
+                    st.error("⚠️ Alerta: Los márgenes o impuestos no pueden ser 100% o superar ese límite numérico.")
                 elif st.session_state.get('mostrar_resultados', False):
                     res = st.session_state.resultados
 
-                    # Metricas Destacadas
-                    m1, m2 = st.columns(2)
-                    m1.metric("🔵 SALIDA FIKA (Bs)", f"{res['precio_fika']:.2f}", f"Utilidad Neta: {res['utilidad_fika']:.2f} Bs")
-                    m2.metric("🟢 FINAL CLIENTE (Bs)", f"{res['precio_final']:.2f}", f"Impuestos: {res['monto_impuestos']:.2f} Bs", delta_color="off")
+                    # MÉTRICAS ESTILO SAAS (Resaltando lo crítico)
+                    st.metric("🟢 PRECIO FINAL AL CLIENTE (PvP)", f"Bs. {res['precio_final']:.2f}", f"Impuestos deducidos: {res['monto_impuestos']:.2f} Bs", delta_color="off")
+                    st.divider()
+                    st.metric("🔵 PRECIO SALIDA FÁBRICA (Fika)", f"Bs. {res['precio_fika']:.2f}", f"Utilidad Fika (+{res['utilidad_fika']:.2f} Bs)")
                     
                     st.divider()
+                    st.markdown("**Desglose Estructural del Valor Financiero**")
+                    df_chart = pd.DataFrame([
+                        {"Elemento": "Costo Producción", "Bs": res['costo_total']},
+                        {"Elemento": "Ganancia Fika", "Bs": res['utilidad_fika']},
+                        {"Elemento": "Ganancia PDV", "Bs": res['utilidad_pdv']},
+                        {"Elemento": "Impuesto", "Bs": res['monto_impuestos']}
+                    ]).set_index("Elemento")
+                    
+                    st.bar_chart(df_chart, use_container_width=True)
 
-                    st.markdown("<p style='font-weight: 600; color: #475569;'>Composición de la Cascada de Valor</p>", unsafe_allow_html=True)
-                    chart_data = [
-                        {"Eslabón": "1. Costo Base de Producción", "Monto (Bs)": res['costo_total']},
-                        {"Eslabón": "2. Margen Operativo Fika", "Monto (Bs)": res['utilidad_fika']},
-                        {"Eslabón": "3. Margen Distribuidor/PDV", "Monto (Bs)": res['utilidad_pdv']},
-                        {"Eslabón": "4. Carga Impositiva", "Monto (Bs)": res['monto_impuestos']}
-                    ]
-                    # Chart without the ugly borders
-                    st.bar_chart(pd.DataFrame(chart_data).set_index("Eslabón"), use_container_width=True)
-
-            # TARJETA DE ACCIONES (Guardar y Descargar)
+            # ZONA DE EXPORTACIÓN Y BASE DE DATOS
             with st.container(border=True):
-                st.subheader("💾 Exportación de Cotización")
+                st.subheader("💾 Gestión Documental")
                 
-                nombre_coti = st.text_input("Identificador / Producto Cotizado", placeholder="Ej: Salsa de Ajo Doypack 500g - Cliente X")
+                nombre_coti = st.text_input("ID o Nombre del Producto", placeholder="Ej: Mermelada 250g Elite")
 
-                col_btn_guardar, col_btn_pdf = st.columns(2)
-
-                with col_btn_guardar:
-                    if st.button("💾 Guardar en Base de Datos", type="primary", use_container_width=True):
-                        if nombre_coti:
-                            def save_coti(data):
-                                data[nombre_coti] = {
-                                    "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                    "resultados": res,
-                                    "parametros": {
-                                        "mp": st.session_state.materia_prima,
-                                        "empaque": st.session_state.empaque,
-                                        "op": st.session_state.costos_operativos,
-                                        "margen_fika": margen_fika_pct,
-                                        "margen_pdv": margen_pdv_pct,
-                                        "impuestos": impuestos_pct
-                                    }
+                if st.button("💾 Respaldar en Base de Datos", type="primary", use_container_width=True):
+                    if nombre_coti:
+                        def save_coti(data):
+                            data[nombre_coti] = {
+                                "fecha": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "resultados": res,
+                                "parametros": {
+                                    "mp": st.session_state.materia_prima,
+                                    "empaque": st.session_state.empaque,
+                                    "op": st.session_state.costos_operativos,
+                                    "margen_fika": margen_fika_pct,
+                                    "margen_pdv": margen_pdv_pct,
+                                    "impuestos": impuestos_pct
                                 }
-                                return data
+                            }
+                            return data
 
-                            st.session_state.db_cotizaciones = update_bd(save_coti)
-                            st.success("✅ ¡Registro respaldado exitosamente!")
-                        else:
-                            st.warning("⚠️ Debes asignar un identificador para guardar.")
-
-                with col_btn_pdf:
-                    if nombre_coti and st.session_state.get('mostrar_resultados', False):
-                        pdf = FPDF()
-                        pdf.add_page()
-                        pdf.set_font("Helvetica", size=18, style="B")
-                        pdf.cell(0, 10, "Factibilidad Técnica Comercial - Fika Group", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.ln(10)
-                        
-                        pdf.set_font("Helvetica", size=12)
-                        pdf.cell(0, 10, f"Producto de Referencia: {nombre_coti}", new_x="LMARGIN", new_y="NEXT")
-                        pdf.cell(0, 10, f"Fecha de Emisión: {datetime.now().strftime('%Y-%m-%d')}", new_x="LMARGIN", new_y="NEXT")
-                        pdf.ln(5)
-                        
-                        pdf.set_font("Helvetica", size=12, style="B")
-                        pdf.cell(0, 10, "-- ESTRUCTURA FINANCIERA --", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=12)
-                        pdf.cell(0, 10, f"Costo Total Base Produccion: {res['costo_total']:.2f} Bs.", new_x="LMARGIN", new_y="NEXT")
-                        pdf.cell(0, 10, f"Precio Salida Fika: {res['precio_fika']:.2f} Bs. (Margen {margen_fika_pct}%)", new_x="LMARGIN", new_y="NEXT")
-                        
-                        pdf.ln(5)
-                        pdf.set_font("Helvetica", size=14, style="B")
-                        pdf.cell(0, 10, f"> PRECIO SUGERIDO CLIENTE FINAL: {res['precio_final']:.2f} Bs.", new_x="LMARGIN", new_y="NEXT")
-                        
-                        pdf.ln(20)
-                        pdf.set_font("Helvetica", size=10, style="I")
-                        pdf.cell(0, 10, "Validación Administrativa: _______________________", new_x="LMARGIN", new_y="NEXT")
-
-                        pdf_bytes = pdf.output()
-                        st.download_button(
-                            label="📄 Imprimir Informe PDF",
-                            data=pdf_bytes,
-                            file_name=f"Cotizacion_{nombre_coti.replace(' ', '_')}.pdf",
-                            mime="application/pdf",
-                            type="primary",
-                            use_container_width=True
-                        )
+                        st.session_state.db_cotizaciones = update_bd(save_coti)
+                        st.success("✅ Certificado: Cotización blindada en la nube/local.")
                     else:
-                        st.button("📄 Imprimir Informe PDF", disabled=True, use_container_width=True, help="Calcula e ingresa un nombre para generar.")
+                        st.warning("⚠️ Debes proporcionar un 'Nombre del Producto' válido.")
 
-    # --- PESTAÑA 2: HISTORIAL ---
-    with tabs[1]:
-        st.subheader("🗂️ Registro de Inteligencia de Negocios")
-        st.caption("Auditoría y consulta de esquemas de precios anteriores.")
+                if nombre_coti and st.session_state.get('mostrar_resultados', False):
+                    pdf = FPDF()
+                    pdf.add_page()
+                    pdf.set_font("Helvetica", size=18, style="B")
+                    pdf.cell(0, 10, "Ficha Tecnica de Factibilidad Comercial - Fika Group", new_x="LMARGIN", new_y="NEXT", align="C")
+                    pdf.ln(10)
+                    
+                    pdf.set_font("Helvetica", size=12)
+                    pdf.cell(0, 10, f"ID de Proyecto: {nombre_coti}", new_x="LMARGIN", new_y="NEXT")
+                    pdf.cell(0, 10, f"Fecha de Analisis: {datetime.now().strftime('%Y-%m-%d %H:%M')}", new_x="LMARGIN", new_y="NEXT")
+                    pdf.ln(5)
+                    
+                    pdf.set_font("Helvetica", size=12, style="B")
+                    pdf.cell(0, 10, "-- DESGLOSE DE COSTOS Y RENTABILIDAD --", new_x="LMARGIN", new_y="NEXT")
+                    pdf.set_font("Helvetica", size=12)
+                    pdf.cell(0, 10, f"Costo Operativo en Plataforma: {res['costo_total']:.2f} Bs.", new_x="LMARGIN", new_y="NEXT")
+                    pdf.cell(0, 10, f"Facturacion Venta Fika: {res['precio_fika']:.2f} Bs. (Reserva Rentabilidad: {margen_fika_pct}%)", new_x="LMARGIN", new_y="NEXT")
+                    
+                    pdf.ln(5)
+                    pdf.set_font("Helvetica", size=14, style="B")
+                    pdf.cell(0, 10, f"[X] ESTANDAR PVP FINAL CLIENTE: {res['precio_final']:.2f} Bs.", new_x="LMARGIN", new_y="NEXT")
+                    
+                    pdf.ln(20)
+                    pdf.set_font("Helvetica", size=10, style="I")
+                    pdf.cell(0, 10, "Aprobacion Contable / CEO: _______________________", new_x="LMARGIN", new_y="NEXT")
+
+                    pdf_bytes = pdf.output()
+                    st.download_button(
+                        label="📄 Descargar Ficha PDF para el Cliente",
+                        data=pdf_bytes,
+                        file_name=f"Fika_{nombre_coti.replace(' ', '_')}.pdf",
+                        mime="application/pdf",
+                        use_container_width=True
+                    )
+
+
+    # --- PESTAÑA 2: HISTORIAL (INTELIGENCIA DE NEGOCIO) ---
+    with tab_historial:
+        st.subheader("🗄️ Auditoría de Costeos Almacenados")
+        st.write("Consulta instantáneamente fórmulas financieras y márgenes de proyectos anteriores.")
         bd = st.session_state.db_cotizaciones
 
         if not bd:
-            st.info("Aún no tienes esquemas comerciales registrados en el sistema.")
+            st.info("ℹ️ Banco de datos vacío. Construye y guarda una cotización primero.")
         else:
             with st.container(border=True):
-                coti_seleccionada = st.selectbox("🔎 Seleccione un modelo almacenado:", list(bd.keys()))
+                coti_seleccionada = st.selectbox("🔎 Filtrar cotización registrada:", ['Selecciona un proyecto...'] + list(bd.keys()))
 
-                if coti_seleccionada:
+                if coti_seleccionada and coti_seleccionada != 'Selecciona un proyecto...':
                     datos = bd[coti_seleccionada]
-                    st.caption(f"📅 Fecha de Generación: {datos['fecha']}")
+                    st.caption(f"Registro Temporal: {datos['fecha']}")
                     st.divider()
 
                     hc1, hc2 = st.columns(2)
                     with hc1:
-                        st.markdown("<p style='font-weight: 600; color: #475569;'>Retrato Financiero</p>", unsafe_allow_html=True)
-                        st.metric("Costo Total Raíz", f"{datos['resultados']['costo_total']:.2f} Bs")
-                        st.metric("Precio Salida de Fábrica", f"{datos['resultados']['precio_fika']:.2f} Bs")
-                        st.metric("Precio Etiqueta Cliente", f"{datos['resultados']['precio_final']:.2f} Bs")
+                        st.markdown("**Finanzas**")
+                        st.metric("Costo Base", f"{datos['resultados']['costo_total']:.2f} Bs")
+                        st.metric("Cierre Fika", f"{datos['resultados']['precio_fika']:.2f} Bs")
+                        st.metric("PvP Final", f"{datos['resultados']['precio_final']:.2f} Bs")
 
                     with hc2:
-                        st.markdown("<p style='font-weight: 600; color: #475569;'>Huella de Parámetros</p>", unsafe_allow_html=True)
+                        st.markdown("**Configuración Estratégica Usada**")
                         try:
                             margen_fika_v = f"{datos['parametros']['margen_fika']}%"
                             margen_pdv_v = f"{datos['parametros']['margen_pdv']}%"
                             impuestos_v = f"{datos['parametros']['impuestos']}%"
                         except KeyError:
-                            margen_fika_v = "N/A"
-                            margen_pdv_v = "N/A"
-                            impuestos_v = "N/A"
+                            margen_fika_v = "No Info"
+                            margen_pdv_v = "No Info"
+                            impuestos_v = "No Info"
 
                         df_params = pd.DataFrame({
-                            "Parámetro Estratégico": ["Margen Fika", "Margen Punto Venta", "Carga Tributaria"],
+                            "Parámetro": ["Rentabilidad Fika", "Rentabilidad Retail (PDV)", "Deducción de Impuestos"],
                             "Valor Registrado": [margen_fika_v, margen_pdv_v, impuestos_v]
                         })
                         st.dataframe(df_params, hide_index=True, use_container_width=True)

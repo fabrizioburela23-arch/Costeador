@@ -1,9 +1,29 @@
+import os
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from streamlit.runtime.scriptrunner_utils.script_run_context import get_script_run_ctx
 from formulas import FinancialCalculator
 from db import CosteosDB
+
+
+if __name__ == "__main__" and get_script_run_ctx(suppress_warning=True) is None:
+    os.execvp(
+        "streamlit",
+        [
+            "streamlit",
+            "run",
+            __file__,
+            "--server.port",
+            os.environ.get("PORT", "8501"),
+            "--server.address",
+            "0.0.0.0",
+            "--server.headless",
+            "true",
+        ],
+    )
 
 
 st.set_page_config(

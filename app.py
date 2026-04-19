@@ -34,60 +34,117 @@ st.set_page_config(
 )
 
 
+# ─────────────────────────────────────────────────────────────
+# PREMIUM DARK THEME — High-contrast, glassmorphism, animations
+# ─────────────────────────────────────────────────────────────
 st.markdown(
     """
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        /* ── COLOR TOKENS ── */
         :root {
-            --bg: #fff8f8;
-            --surface: #ffffff;
-            --surface-soft: #fff0f2;
-            --surface-mid: #ffe8ed;
-            --surface-strong: #f9dbe2;
-            --text: #27171c;
-            --muted: #5a3f47;
-            --primary: #b90064;
-            --primary-2: #e6007e;
-            --secondary: #83449a;
-            --tertiary: #006688;
-            --outline: #e2bdc7;
-            --danger: #ba1a1a;
+            --bg-base: #0b0f19;
+            --bg-surface: rgba(17, 22, 36, 0.85);
+            --bg-elevated: rgba(25, 32, 52, 0.88);
+            --bg-card: rgba(30, 38, 60, 0.65);
+            --bg-input: rgba(20, 26, 44, 0.9);
+
+            --text-primary: #f0f2f8;
+            --text-secondary: #a0a8c0;
+            --text-muted: #6b7394;
+
+            --accent: #a855f7;
+            --accent-light: #c084fc;
+            --accent-glow: rgba(168, 85, 247, 0.25);
+            --accent-2: #6366f1;
+            --accent-2-glow: rgba(99, 102, 241, 0.2);
+
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+
+            --border: rgba(148, 163, 210, 0.12);
+            --border-hover: rgba(168, 85, 247, 0.35);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.25);
+            --shadow-md: 0 8px 28px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.45);
+            --shadow-glow: 0 0 40px var(--accent-glow);
+
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-pill: 999px;
         }
+
+        /* ── BASE ── */
+        *, *::before, *::after { box-sizing: border-box; }
 
         .stApp {
             background:
-                radial-gradient(circle at top right, rgba(230, 0, 126, 0.08), transparent 28%),
-                radial-gradient(circle at top left, rgba(131, 68, 154, 0.06), transparent 24%),
-                var(--bg);
-            color: var(--text);
-            font-family: "Inter", "Segoe UI", sans-serif;
+                radial-gradient(ellipse 80% 50% at 20% -10%, rgba(99, 102, 241, 0.15), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 10%, rgba(168, 85, 247, 0.12), transparent),
+                radial-gradient(ellipse 50% 50% at 50% 100%, rgba(99, 102, 241, 0.06), transparent),
+                var(--bg-base) !important;
+            color: var(--text-primary) !important;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif !important;
         }
 
+        /* ── SCROLLBAR ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.3); border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.5); }
+
+        /* ── HEADER ── */
         [data-testid="stHeader"] {
-            background: rgba(255, 248, 248, 0.75);
+            background: rgba(11, 15, 25, 0.7) !important;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
         }
 
+        /* ── SIDEBAR ── */
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #fff7f8 0%, #fff0f2 100%);
-            border-right: 1px solid rgba(226, 189, 199, 0.5);
+            background: linear-gradient(180deg, rgba(17, 22, 38, 0.97) 0%, rgba(11, 15, 25, 0.98) 100%) !important;
+            border-right: 1px solid var(--border) !important;
         }
 
         [data-testid="stSidebar"] .block-container {
             padding-top: 1.5rem;
         }
 
+        [data-testid="stSidebar"] [data-testid="stMarkdown"] p,
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] .stSlider label,
+        [data-testid="stSidebar"] span {
+            color: var(--text-secondary) !important;
+        }
+
+        /* ── MAIN CONTENT ── */
         .block-container {
             padding-top: 1.5rem;
             padding-bottom: 2rem;
         }
 
+        /* ── BRAND HEADER ── */
         .brand-shell {
-            background: rgba(255, 248, 248, 0.82);
-            backdrop-filter: blur(18px);
-            border: 1px solid rgba(226, 189, 199, 0.35);
-            border-radius: 24px;
-            padding: 1rem 1.25rem;
-            box-shadow: 0 20px 40px rgba(39, 23, 28, 0.05);
-            margin-bottom: 1.25rem;
+            background: var(--bg-card);
+            backdrop-filter: blur(24px) saturate(1.4);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem 1.75rem;
+            box-shadow: var(--shadow-md), var(--shadow-glow);
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .brand-shell::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-2), var(--accent), var(--accent-2));
+            opacity: 0.8;
         }
 
         .brand-bar {
@@ -99,34 +156,35 @@ st.markdown(
         }
 
         .brand-kicker {
-            color: var(--secondary);
+            color: var(--accent-light);
             text-transform: uppercase;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.15em;
             font-weight: 800;
-            font-size: 0.76rem;
-            margin-bottom: 0.35rem;
+            font-size: 0.72rem;
+            margin-bottom: 0.4rem;
         }
 
         .brand-title {
-            font-size: 2.3rem;
-            line-height: 1;
+            font-size: 2.4rem;
+            line-height: 1.05;
             font-weight: 900;
             letter-spacing: -0.04em;
-            color: var(--text);
+            color: var(--text-primary);
             margin: 0;
         }
 
         .brand-title span {
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
+            background: linear-gradient(135deg, var(--accent), var(--accent-light));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
         .brand-copy {
-            color: var(--muted);
+            color: var(--text-secondary);
             max-width: 760px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             margin-top: 0.5rem;
+            line-height: 1.55;
         }
 
         .nav-pill-row {
@@ -137,29 +195,43 @@ st.markdown(
         }
 
         .nav-pill {
-            background: #fff;
-            border: 1px solid rgba(226, 189, 199, 0.75);
-            color: var(--muted);
-            border-radius: 999px;
-            padding: 0.55rem 0.95rem;
-            font-size: 0.88rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: var(--radius-pill);
+            padding: 0.5rem 0.9rem;
+            font-size: 0.82rem;
             font-weight: 700;
+            transition: all 0.25s ease;
+        }
+
+        .nav-pill:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
         }
 
         .nav-pill.active {
             color: white;
             border-color: transparent;
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
-            box-shadow: 0 10px 24px rgba(185, 0, 100, 0.18);
+            background: linear-gradient(135deg, var(--accent-2), var(--accent));
+            box-shadow: 0 6px 20px var(--accent-glow);
         }
 
+        /* ── SECTION CARDS ── */
         .section-card {
-            background: rgba(255, 255, 255, 0.72);
-            border: 1px solid rgba(226, 189, 199, 0.45);
-            border-radius: 24px;
-            padding: 1.2rem 1.2rem 1rem 1.2rem;
-            box-shadow: 0 20px 40px rgba(39, 23, 28, 0.04);
+            background: var(--bg-card);
+            backdrop-filter: blur(16px) saturate(1.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.4rem;
+            box-shadow: var(--shadow-sm);
             margin-bottom: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .section-card:hover {
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-md);
         }
 
         .section-title {
@@ -173,46 +245,54 @@ st.markdown(
         .section-title h3 {
             margin: 0;
             font-size: 1.15rem;
-            font-weight: 850;
+            font-weight: 800;
             letter-spacing: -0.02em;
-            color: var(--text);
+            color: var(--text-primary);
         }
 
         .section-title p {
             margin: 0.25rem 0 0 0;
-            color: var(--muted);
-            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.5;
         }
 
+        /* ── SUMMARY HERO ── */
         .summary-hero {
-            background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(255,240,242,0.92));
-            border: 1px solid rgba(226, 189, 199, 0.5);
-            border-radius: 28px;
-            padding: 1.5rem;
-            box-shadow: 0 22px 50px rgba(39, 23, 28, 0.06);
+            background: linear-gradient(145deg, var(--bg-elevated), var(--bg-card));
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+            box-shadow: var(--shadow-lg), var(--shadow-glow);
             margin-bottom: 1rem;
             position: relative;
             overflow: hidden;
         }
 
-        .summary-hero:after {
+        .summary-hero::before {
             content: "";
             position: absolute;
-            width: 220px;
-            height: 220px;
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(185,0,100,0.14) 0%, rgba(185,0,100,0) 70%);
-            top: -80px;
-            right: -40px;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            top: -100px;
+            right: -60px;
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
         }
 
         .summary-kicker {
             position: relative;
             z-index: 1;
-            color: var(--secondary);
+            color: var(--accent-light);
             text-transform: uppercase;
-            letter-spacing: 0.12em;
-            font-size: 0.74rem;
+            letter-spacing: 0.15em;
+            font-size: 0.72rem;
             font-weight: 800;
             margin-bottom: 0.5rem;
         }
@@ -220,164 +300,402 @@ st.markdown(
         .summary-headline {
             position: relative;
             z-index: 1;
-            color: var(--text);
-            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.6rem;
             letter-spacing: -0.05em;
             line-height: 1;
             font-weight: 900;
-            margin: 0.2rem 0 0.5rem 0;
+            margin: 0.2rem 0 0.6rem 0;
         }
 
         .summary-copy {
             position: relative;
             z-index: 1;
-            color: var(--muted);
+            color: var(--text-secondary);
             margin: 0;
             max-width: 520px;
+            line-height: 1.55;
         }
 
+        /* ── MINI CARDS ── */
         .mini-card {
-            background: rgba(255,255,255,0.82);
-            border: 1px solid rgba(226, 189, 199, 0.5);
-            border-radius: 18px;
-            padding: 0.95rem 1rem;
-            margin-bottom: 0.8rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .mini-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
         }
 
         .mini-label {
-            color: var(--muted);
+            color: var(--accent-light);
             text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            font-size: 0.7rem;
             font-weight: 800;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.35rem;
         }
 
         .mini-value {
-            color: var(--text);
-            font-size: 1.35rem;
+            color: var(--text-primary);
+            font-size: 1.4rem;
             font-weight: 850;
             letter-spacing: -0.03em;
         }
 
         .mini-note {
-            color: var(--muted);
-            font-size: 0.86rem;
-            margin-top: 0.25rem;
+            color: var(--text-muted);
+            font-size: 0.84rem;
+            margin-top: 0.3rem;
+            line-height: 1.5;
         }
 
+        /* ── GRADIENT CHIP ── */
         .gradient-chip {
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.35rem 0.65rem;
-            border-radius: 999px;
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius-pill);
             color: white;
-            font-size: 0.78rem;
+            font-size: 0.76rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
-            box-shadow: 0 8px 20px rgba(185, 0, 100, 0.18);
+            background: linear-gradient(135deg, var(--accent-2), var(--accent));
+            box-shadow: 0 4px 16px var(--accent-glow);
+            letter-spacing: 0.02em;
         }
 
+        /* ── TABS ── */
         .stTabs [data-baseweb="tab-list"] {
             gap: 0.5rem;
             margin-bottom: 1rem;
+            background: transparent !important;
+            border-bottom: 1px solid var(--border) !important;
+            padding-bottom: 0.5rem;
         }
 
         .stTabs [data-baseweb="tab"] {
-            border-radius: 999px;
-            background: rgba(255,255,255,0.7);
-            border: 1px solid rgba(226, 189, 199, 0.6);
-            color: var(--muted);
-            font-weight: 800;
-            padding: 0.45rem 0.9rem;
+            border-radius: var(--radius-pill);
+            background: var(--bg-input) !important;
+            border: 1px solid var(--border) !important;
+            color: var(--text-muted) !important;
+            font-weight: 700 !important;
+            padding: 0.45rem 1rem !important;
+            transition: all 0.25s ease !important;
+        }
+
+        .stTabs [data-baseweb="tab"]:hover {
+            color: var(--text-primary) !important;
+            border-color: var(--border-hover) !important;
         }
 
         .stTabs [aria-selected="true"] {
-            background: linear-gradient(135deg, var(--primary), var(--primary-2)) !important;
+            background: linear-gradient(135deg, var(--accent-2), var(--accent)) !important;
             color: white !important;
             border-color: transparent !important;
+            box-shadow: 0 4px 16px var(--accent-glow) !important;
         }
 
+        .stTabs [data-baseweb="tab-highlight"],
+        .stTabs [data-baseweb="tab-border"] {
+            display: none !important;
+        }
+
+        /* ── BUTTONS ── */
         div.stButton > button {
-            border-radius: 14px;
-            border: 1px solid rgba(226, 189, 199, 0.75);
-            background: rgba(255,255,255,0.88);
-            color: var(--text);
-            font-weight: 800;
-            padding-top: 0.55rem;
-            padding-bottom: 0.55rem;
-        }
-
-        div.stButton > button[kind="primary"] {
-            border: 0;
-            color: white;
-            background: linear-gradient(135deg, var(--primary), var(--primary-2));
-            box-shadow: 0 12px 30px rgba(185, 0, 100, 0.2);
+            border-radius: var(--radius-sm) !important;
+            border: 1px solid var(--border) !important;
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            font-weight: 700 !important;
+            font-family: "Inter", sans-serif !important;
+            padding: 0.55rem 1rem !important;
+            transition: all 0.25s ease !important;
+            letter-spacing: 0.01em;
         }
 
         div.stButton > button:hover {
-            border-color: rgba(185, 0, 100, 0.55);
-            color: var(--primary);
+            border-color: var(--accent) !important;
+            color: var(--accent-light) !important;
+            box-shadow: 0 4px 16px var(--accent-glow) !important;
+            transform: translateY(-1px);
         }
 
-        div.stButton > button[kind="primary"]:hover {
-            color: white;
+        div.stButton > button:active {
+            transform: translateY(0);
         }
 
-        .stTextInput input, .stNumberInput input, .stSelectbox select, textarea {
-            border-radius: 14px !important;
-            border: 1px solid rgba(226, 189, 199, 0.8) !important;
-            background: rgba(255, 255, 255, 0.9) !important;
+        div.stButton > button[kind="primary"],
+        div.stButton > button[data-testid="stFormSubmitButton"] {
+            border: none !important;
+            color: white !important;
+            background: linear-gradient(135deg, var(--accent-2), var(--accent)) !important;
+            box-shadow: 0 8px 24px var(--accent-glow) !important;
         }
 
+        div.stButton > button[kind="primary"]:hover,
+        div.stButton > button[data-testid="stFormSubmitButton"]:hover {
+            color: white !important;
+            box-shadow: 0 10px 32px rgba(168, 85, 247, 0.4) !important;
+            transform: translateY(-2px);
+        }
+
+        /* Form submit button */
+        [data-testid="stFormSubmitButton"] > button {
+            border: none !important;
+            color: white !important;
+            background: linear-gradient(135deg, var(--accent-2), var(--accent)) !important;
+            box-shadow: 0 6px 20px var(--accent-glow) !important;
+            font-weight: 800 !important;
+            border-radius: var(--radius-sm) !important;
+            transition: all 0.25s ease !important;
+        }
+
+        [data-testid="stFormSubmitButton"] > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4) !important;
+        }
+
+        /* ── INPUTS ── */
+        .stTextInput input,
+        .stNumberInput input,
+        .stSelectbox [data-baseweb="select"],
+        .stTextArea textarea {
+            border-radius: var(--radius-sm) !important;
+            border: 1px solid var(--border) !important;
+            background: var(--bg-input) !important;
+            color: var(--text-primary) !important;
+            font-family: "Inter", sans-serif !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .stTextInput input:focus,
+        .stNumberInput input:focus,
+        .stTextArea textarea:focus {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 2px var(--accent-glow) !important;
+        }
+
+        /* Input labels */
+        .stTextInput label,
+        .stNumberInput label,
+        .stSelectbox label,
+        .stTextArea label,
+        .stSlider label,
+        .stRadio label,
+        .stCheckbox label {
+            color: var(--text-secondary) !important;
+            font-weight: 600 !important;
+            font-size: 0.88rem !important;
+        }
+
+        /* Selectbox dropdown */
+        [data-baseweb="select"] > div {
+            background: var(--bg-input) !important;
+            border-color: var(--border) !important;
+        }
+
+        [data-baseweb="popover"] {
+            background: var(--bg-elevated) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius-md) !important;
+        }
+
+        [data-baseweb="menu"] {
+            background: var(--bg-elevated) !important;
+        }
+
+        [data-baseweb="menu"] li {
+            color: var(--text-primary) !important;
+        }
+
+        [data-baseweb="menu"] li:hover {
+            background: var(--accent-glow) !important;
+        }
+
+        /* Slider */
+        .stSlider [data-baseweb="slider"] [role="slider"] {
+            background: var(--accent) !important;
+            border: 2px solid var(--accent-light) !important;
+        }
+
+        .stSlider [data-testid="stTickBar"] {
+            display: none;
+        }
+
+        /* ── METRICS ── */
         [data-testid="stMetric"] {
-            background: rgba(255,255,255,0.78);
-            border: 1px solid rgba(226, 189, 199, 0.55);
-            border-radius: 18px;
-            padding: 0.85rem 1rem;
-            box-shadow: 0 12px 24px rgba(39, 23, 28, 0.04);
+            background: var(--bg-card) !important;
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius-md) !important;
+            padding: 0.9rem 1rem !important;
+            box-shadow: var(--shadow-sm) !important;
+            transition: all 0.3s ease;
+        }
+
+        [data-testid="stMetric"]:hover {
+            border-color: var(--border-hover) !important;
+            box-shadow: var(--shadow-md) !important;
         }
 
         [data-testid="stMetricLabel"] {
-            color: var(--muted);
-            font-weight: 700;
+            color: var(--text-muted) !important;
+            font-weight: 700 !important;
         }
 
         [data-testid="stMetricValue"] {
-            color: var(--text);
-            font-weight: 900;
-            letter-spacing: -0.03em;
+            color: var(--text-primary) !important;
+            font-weight: 900 !important;
+            letter-spacing: -0.03em !important;
         }
 
+        [data-testid="stMetricDelta"] {
+            color: var(--accent-light) !important;
+        }
+
+        /* ── DATAFRAME ── */
+        [data-testid="stDataFrame"],
+        .stDataFrame {
+            border-radius: var(--radius-md) !important;
+            overflow: hidden;
+        }
+
+        /* ── ALERTS ── */
+        .stAlert {
+            border-radius: var(--radius-sm) !important;
+            border: 1px solid var(--border) !important;
+            background: var(--bg-elevated) !important;
+        }
+
+        [data-testid="stNotification"] {
+            background: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+            border-radius: var(--radius-sm) !important;
+        }
+
+        /* ── HISTORY CARDS ── */
         .history-card {
-            background: rgba(255,255,255,0.82);
-            border: 1px solid rgba(226, 189, 199, 0.55);
-            border-radius: 18px;
-            padding: 1rem;
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.1rem 1.2rem;
             margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
         }
 
+        .history-card:hover {
+            border-color: var(--border-hover);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        /* ── SIDEBAR CARDS ── */
         .sidebar-card {
-            background: rgba(255,255,255,0.78);
-            border: 1px solid rgba(226, 189, 199, 0.55);
-            border-radius: 18px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
             padding: 1rem;
             margin-bottom: 1rem;
-            box-shadow: 0 12px 24px rgba(39, 23, 28, 0.04);
+            box-shadow: var(--shadow-sm);
         }
 
         .sidebar-title {
-            margin: 0 0 0.25rem 0;
+            margin: 0 0 0.3rem 0;
             font-size: 0.95rem;
-            font-weight: 850;
-            color: var(--text);
+            font-weight: 800;
+            color: var(--text-primary);
         }
 
         .sidebar-copy {
             margin: 0;
             font-size: 0.84rem;
-            color: var(--muted);
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* ── EXPANDER ── */
+        [data-testid="stExpander"] {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius-md) !important;
+        }
+
+        [data-testid="stExpander"] summary {
+            color: var(--text-primary) !important;
+            font-weight: 700 !important;
+        }
+
+        /* ── MISC TEXT ── */
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-primary) !important;
+        }
+
+        p, span, div, label {
+            color: var(--text-secondary);
+        }
+
+        a {
+            color: var(--accent-light) !important;
+        }
+
+        /* ── DIVIDER ── */
+        hr {
+            border-color: var(--border) !important;
+        }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-card, .summary-hero, .brand-shell, .mini-card, .history-card {
+            animation: fade-in-up 0.5s ease both;
+        }
+
+        .mini-card:nth-child(2) { animation-delay: 0.05s; }
+        .mini-card:nth-child(3) { animation-delay: 0.1s; }
+        .mini-card:nth-child(4) { animation-delay: 0.15s; }
+
+        /* ── SLIDER COLORS ── */
+        .stSlider > div > div > div {
+            color: var(--text-secondary) !important;
+        }
+
+        /* Number input stepper */
+        .stNumberInput button {
+            color: var(--text-secondary) !important;
+            background: var(--bg-elevated) !important;
+            border-color: var(--border) !important;
+        }
+
+        .stNumberInput button:hover {
+            color: var(--accent-light) !important;
+            border-color: var(--accent) !important;
+        }
+
+        /* Form borders */
+        [data-testid="stForm"] {
+            border-color: var(--border) !important;
+            border-radius: var(--radius-md) !important;
+            padding: 1rem !important;
+            background: var(--bg-elevated) !important;
+        }
+
+        /* JSON viewer */
+        .stJson {
+            background: var(--bg-input) !important;
+            border-radius: var(--radius-sm) !important;
         }
     </style>
     """,
@@ -405,7 +723,7 @@ with st.sidebar:
     st.markdown(
         """
         <div class="sidebar-card">
-            <p class="sidebar-title">Pricing Studio</p>
+            <p class="sidebar-title">⚙️ Pricing Studio</p>
             <p class="sidebar-copy">Ajusta el lote, los márgenes y las simulaciones para visualizar escenarios comerciales en tiempo real.</p>
         </div>
         """,
@@ -427,7 +745,7 @@ with st.sidebar:
     st.markdown(
         """
         <div class="sidebar-card">
-            <p class="sidebar-title">Márgenes y carga fiscal</p>
+            <p class="sidebar-title">📊 Márgenes y carga fiscal</p>
             <p class="sidebar-copy">La fórmula aplicada mantiene el enfoque de margen sobre precio solicitado en el proyecto.</p>
         </div>
         """,
@@ -441,8 +759,8 @@ with st.sidebar:
     st.markdown(
         f"""
         <div class="sidebar-card">
-            <p class="sidebar-title">Lectura del escenario</p>
-            <p class="sidebar-copy">Fika: <strong>{margen_fika_pct*100:.0f}%</strong> · PDV: <strong>{margen_pdv_pct*100:.0f}%</strong> · Impuestos: <strong>{impuestos_pct*100:.0f}%</strong></p>
+            <p class="sidebar-title">📌 Lectura del escenario</p>
+            <p class="sidebar-copy">Fika: <strong style="color: var(--accent-light)">{margen_fika_pct*100:.0f}%</strong> · PDV: <strong style="color: var(--accent-light)">{margen_pdv_pct*100:.0f}%</strong> · Impuestos: <strong style="color: var(--accent-light)">{impuestos_pct*100:.0f}%</strong></p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -456,7 +774,7 @@ st.markdown(
             <div>
                 <div class="brand-kicker">Atelier Financial Interface</div>
                 <h1 class="brand-title">Costeador <span>Atelier</span></h1>
-                <p class="brand-copy">Rediseño visual inspirado en Stitch para una experiencia más editorial, clara y premium en la construcción, análisis y cotización de productos agroindustriales.</p>
+                <p class="brand-copy">Herramienta premium para la construcción, análisis y cotización de productos agroindustriales. Diseño editorial con foco en claridad y eficiencia operativa.</p>
             </div>
             <div class="nav-pill-row">
                 <span class="nav-pill">Overview</span>
@@ -560,7 +878,7 @@ def add_cif_item(nombre, costo):
 
 
 builder_tab, pricing_tab, history_tab = st.tabs(
-    ["Recipe Builder", "Pricing Studio", "Costeos guardados"]
+    ["🔧 Recipe Builder", "💰 Pricing Studio", "📁 Costeos guardados"]
 )
 
 
@@ -613,7 +931,7 @@ with builder_tab:
             mpd_cantidad = a2.number_input("Cant. inicial (Kg)", min_value=0.0, value=100.0, step=1.0)
             mpd_costo_unit = a3.number_input("Costo unit. (Bs/Kg)", min_value=0.0, value=5.0, step=0.5)
             mpd_merma = a4.number_input("Merma (%)", min_value=0.0, max_value=99.0, value=15.0, step=1.0)
-            submitted_mpd = st.form_submit_button("Agregar ingrediente", type="primary", use_container_width=True)
+            submitted_mpd = st.form_submit_button("✚ Agregar ingrediente", type="primary", use_container_width=True)
             if submitted_mpd:
                 add_mpd_item(mpd_nombre, mpd_cantidad, mpd_costo_unit, mpd_merma)
 
@@ -641,7 +959,7 @@ with builder_tab:
                 format_func=lambda x: st.session_state.mpd_items[x]["nombre"],
                 key="delete_mpd_select",
             )
-            if st.button("Eliminar ingrediente seleccionado", use_container_width=True):
+            if st.button("🗑 Eliminar ingrediente seleccionado", use_container_width=True):
                 st.session_state.mpd_items.pop(delete_idx)
                 st.rerun()
         else:
@@ -656,7 +974,7 @@ with builder_tab:
         emp_nombre = em1.text_input("Ítem de empaque", placeholder="Ej. Bolsa trilaminada")
         emp_cantidad = em2.number_input("Cantidad", min_value=0.0, value=1000.0, step=1.0)
         emp_costo_unit = em3.number_input("Costo unitario (Bs)", min_value=0.0, value=1.5, step=0.1)
-        if st.button("Agregar empaque", use_container_width=True):
+        if st.button("✚ Agregar empaque", use_container_width=True):
             add_empaque_item(emp_nombre, emp_cantidad, emp_costo_unit)
 
         if st.session_state.empaque_items:
@@ -681,7 +999,7 @@ with builder_tab:
         ci1, ci2 = st.columns([2.2, 1.2])
         cif_nombre = ci1.text_input("Concepto CIF", placeholder="Ej. Energía eléctrica")
         cif_costo = ci2.number_input("Costo CIF total (Bs)", min_value=0.0, value=300.0, step=10.0)
-        if st.button("Agregar CIF", use_container_width=True):
+        if st.button("✚ Agregar CIF", use_container_width=True):
             add_cif_item(cif_nombre, cif_costo)
 
         if st.session_state.cif_items:
@@ -722,13 +1040,13 @@ with builder_tab:
                 <div class="summary-hero">
                     <div class="summary-kicker">Atelier Summary</div>
                     <div class="summary-headline">{safe_currency(ru['precio_venta_publico_bs'])}</div>
-                    <p class="summary-copy">Precio público final por unidad para <strong>{st.session_state.producto_nombre}</strong>. La interfaz replica la lógica visual premium del diseño Stitch con foco en lectura comercial.</p>
+                    <p class="summary-copy">Precio público final por unidad para <strong style="color: var(--accent-light)">{st.session_state.producto_nombre}</strong>. Cálculo en tiempo real basado en costos, márgenes y carga fiscal configurada.</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            st.markdown('<span class="gradient-chip">Pricing recommendation activa</span>', unsafe_allow_html=True)
+            st.markdown('<span class="gradient-chip">✦ Pricing recommendation activa</span>', unsafe_allow_html=True)
             st.write("")
             st.metric("Costo total de producción / unidad", safe_currency(cu["costo_produccion"]))
             st.metric(
@@ -826,9 +1144,9 @@ with pricing_tab:
                 <div class="section-title">
                     <div>
                         <h3>Cost Analysis & Pricing</h3>
-                        <p>Vista inspirada en el layout de Pricing de Stitch, enfocada en desglose, estrategia y precio objetivo.</p>
+                        <p>Desglose completo del costeo unitario, márgenes y precio final objetivo.</p>
                     </div>
-                    <div class="gradient-chip">{st.session_state.producto_nombre}</div>
+                    <div class="gradient-chip">✦ {st.session_state.producto_nombre}</div>
                 </div>
             </div>
             """,
@@ -850,19 +1168,20 @@ with pricing_tab:
                 hole=0.68,
                 color="Componente",
                 color_discrete_map={
-                    "Ingredientes": "#b90064",
-                    "Empaque": "#e6007e",
-                    "Labor": "#83449a",
-                    "Overhead": "#006688",
+                    "Ingredientes": "#a855f7",
+                    "Empaque": "#c084fc",
+                    "Labor": "#6366f1",
+                    "Overhead": "#38bdf8",
                 },
             )
             fig_donut.update_layout(
-                title="Participación del costo unitario",
+                title=dict(text="Participación del costo unitario", font=dict(color="#f0f2f8", size=14)),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
                 legend_title_text="",
                 margin=dict(l=10, r=10, t=60, b=10),
-                font=dict(color="#27171c"),
+                font=dict(color="#a0a8c0", family="Inter"),
+                legend=dict(font=dict(color="#a0a8c0")),
             )
             st.plotly_chart(fig_donut, use_container_width=True)
 
@@ -874,19 +1193,21 @@ with pricing_tab:
                     measure=["relative"] * 7 + ["total"],
                     x=breakdown["Componente"].tolist() + ["PVP Final"],
                     y=breakdown["Monto (Bs.)"].tolist() + [ru["precio_venta_publico_bs"]],
-                    connector={"line": {"color": "rgba(39,23,28,0.3)"}},
-                    increasing={"marker": {"color": "#b90064"}},
-                    decreasing={"marker": {"color": "#83449a"}},
-                    totals={"marker": {"color": "#006688"}},
+                    connector={"line": {"color": "rgba(160,168,192,0.3)"}},
+                    increasing={"marker": {"color": "#a855f7"}},
+                    decreasing={"marker": {"color": "#6366f1"}},
+                    totals={"marker": {"color": "#38bdf8"}},
                 )
             )
             fig_waterfall.update_layout(
-                title="Construcción del precio final",
+                title=dict(text="Construcción del precio final", font=dict(color="#f0f2f8", size=14)),
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
                 margin=dict(l=10, r=10, t=60, b=10),
-                font=dict(color="#27171c"),
+                font=dict(color="#a0a8c0", family="Inter"),
                 showlegend=False,
+                xaxis=dict(gridcolor="rgba(148,163,210,0.08)", color="#a0a8c0"),
+                yaxis=dict(gridcolor="rgba(148,163,210,0.08)", color="#a0a8c0"),
             )
             st.plotly_chart(fig_waterfall, use_container_width=True)
 
@@ -900,7 +1221,7 @@ with pricing_tab:
                 "Nombre del escenario",
                 placeholder="Ej. Mango deshidratado 100Kg",
             )
-            if st.button("Guardar en base de datos", type="primary", use_container_width=True):
+            if st.button("💾 Guardar en base de datos", type="primary", use_container_width=True):
                 if not nombre_costeo:
                     st.warning("Debes asignar un nombre al costeo antes de guardar.")
                 else:
@@ -924,7 +1245,7 @@ with pricing_tab:
                         "resultados": resultados,
                     }
                     doc_id = CosteosDB.save_costeo(doc_data)
-                    st.success(f"Costeo guardado exitosamente con ID: {doc_id}")
+                    st.success(f"✅ Costeo guardado exitosamente con ID: {doc_id}")
             render_card_end()
 
         with right_save:
@@ -969,7 +1290,7 @@ with history_tab:
         <div class="section-card">
             <div class="section-title">
                 <div>
-                    <h3>Costeos Históricos Guardados</h3>
+                    <h3>📁 Costeos Históricos Guardados</h3>
                     <p>Visualiza los escenarios persistidos y consulta su precio final, fecha y estructura general.</p>
                 </div>
             </div>
@@ -978,7 +1299,7 @@ with history_tab:
         unsafe_allow_html=True,
     )
 
-    if st.button("Refrescar lista", use_container_width=False):
+    if st.button("🔄 Refrescar lista", use_container_width=False):
         st.rerun()
 
     try:

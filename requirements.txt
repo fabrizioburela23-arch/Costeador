@@ -3,3 +3,6 @@ pandas>=2.0.0
 plotly>=5.17.0
 firebase-admin>=6.2.0
 fpdf2
+
+psycopg2-binary>=2.9.9
+SQLAlchemy>=2.0.25
